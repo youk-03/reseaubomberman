@@ -47,18 +47,19 @@ joueur * nouveau_joueur(int sock){
 }
 
 
-int ajoute_joueur(partie4v4* p, int sock){ // Peut-être bouger dans un autre fichier
+joueur * ajoute_joueur(partie4v4* p, int sock){ // Peut-être bouger dans un autre fichier
     pthread_mutex_lock(&verrou);
     for (int i=0; i<4; i++){
         if (p->joueurs[i]==NULL){
-            p->joueurs[i] = nouveau_joueur(sock);
+            joueur * j = nouveau_joueur(sock);
+            p->joueurs[i] = j;
             printf("Joueur ajouté à la partie \n");
             pthread_mutex_unlock(&verrou);
-            return 1;
+            return j;
         }
     }
     pthread_mutex_unlock(&verrou);
-    return 0;
+    return NULL;
 }
 
 int partie_prete(partie4v4 p){
@@ -95,7 +96,13 @@ void *serve(void *arg) { // mettre des limites d'attente sur les recv
     // Lire les données reçu et ajouter le joueur à une partie
     /* TODO : if ... partie4v4 else partie2v2 */
     
-    ajoute_joueur(a.partie, sock);
+    joueur * j = ajoute_joueur(a.partie, sock);
+    if (j==NULL){
+        printf("Erreur le joueur n'a pas pu être ajouté");
+        close(sock);
+        free(arg);
+        return NULL;
+    }
 
     /* Envoyer données au joueur 
     - identifiant
@@ -115,13 +122,28 @@ void *serve(void *arg) { // mettre des limites d'attente sur les recv
 
     // attendre le message "prêt" du joueur
 
+    memset(buf, 0, SIZE_BUF);
+
+    recu = 0;
+    while(recu<16) { // Je crois que c'est la taille du message
+        int r = recv(sock, buf+recu, SIZE_BUF, 0);
+        if (r<0){
+            perror("recv");
+            close(sock);
+            free(arg);
+            int *ret = malloc(sizeof(int));
+            *ret = 1;
+            pthread_exit(ret);
+        }
+        recu += r;
+    }
+    printf("recu : %s\n", buf);
+
+    j->pret = 1 ; // mettre un mutex ? normalement seule ce thread est sensé écrire dans ce joueur
 
 
 
-
-
-
-    //close(sock);
+    close(sock); // a enlever peut-être un jour
     free(arg);
     return NULL;
 }
