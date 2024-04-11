@@ -15,6 +15,9 @@
 #endif
 
 #define SIZE_BUF 256
+
+pthread_mutex_t verrou = PTHREAD_MUTEX_INITIALIZER; // utiliser pour ajouter des joueurs à une partie
+
 // Pour compiler : gcc -DMAC serveur.c -o serveur
 typedef struct joueur{
     int sock;
@@ -23,7 +26,7 @@ typedef struct joueur{
 } joueur;
 
 typedef struct partie4v4{
-    joueur * joueurs;
+    joueur * joueurs[4];
     char * adresse; // adresse IPv6
     int port_multi; // port de multidiffusion
     int port; // port pour recevoir des messages
@@ -35,15 +38,34 @@ typedef struct arg_serve{
 } arg_serve;
 
 
-int ajoute_joueur(partie4v4 p, int sock){ // Peut-être bouger dans un autre fichier
-    /* Utiliser des mutex */
-    // Ajouter le joueur a la partie
-    // renvoie 1 si ok
-    return 1;
+joueur * nouveau_joueur(int sock){
+    joueur * res = malloc(sizeof(joueur));
+    res->sock = sock;
+    res->id = 1; // TODO :générer un id aléatoire ou incrépenter un compte
+    res->pret = 0;
+    return res;
+}
+
+
+int ajoute_joueur(partie4v4* p, int sock){ // Peut-être bouger dans un autre fichier
+    pthread_mutex_lock(&verrou);
+    for (int i=0; i<4; i++){
+        if (p->joueurs[i]==NULL){
+            p->joueurs[i] = nouveau_joueur(sock);
+            printf("Joueur ajouté à la partie \n");
+            pthread_mutex_unlock(&verrou);
+            return 1;
+        }
+    }
+    pthread_mutex_unlock(&verrou);
+    return 0;
 }
 
 int partie_prete(partie4v4 p){
-    // teste si la partie est remplie et que tous les joueurs sont prets
+    for (int i=0; i<4; i++){
+        if (p.joueurs[i]==NULL) return 0;
+        if (!p.joueurs[i]->pret) return 0;
+    }
     return 1;
 }
 
@@ -73,7 +95,7 @@ void *serve(void *arg) { // mettre des limites d'attente sur les recv
     // Lire les données reçu et ajouter le joueur à une partie
     /* TODO : if ... partie4v4 else partie2v2 */
     
-    ajoute_joueur(*(a.partie), sock);
+    ajoute_joueur(a.partie, sock);
 
     /* Envoyer données au joueur 
     - identifiant
@@ -173,7 +195,7 @@ int main(int argc, char *argv[]){
             printf("client connecte : %s %d\n", inet_ntop(AF_INET6,&addrclient.sin6_addr,nom_dst,sizeof(nom_dst)), htons(addrclient.sin6_port));
         }
 
-        // TODO : lance une partie si elle est remplie
+        printf("Partie prête : %d \n", partie_prete(* p4v4));
         if (partie_prete(* p4v4)){
             // lancer thread partie
             // mettre une nouvelle partie dans p4v4
