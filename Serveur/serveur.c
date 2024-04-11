@@ -15,7 +15,7 @@
 #endif
 
 #define SIZE_BUF 256
-
+// Pour compiler : gcc -DMAC serveur.c -o serveur
 typedef struct joueur{
     int sock;
     int id;
@@ -118,6 +118,7 @@ int main(int argc, char *argv[]){
     }
 
     struct sockaddr_in6 address_sock;
+    memset(&address_sock, 0, sizeof(address_sock));
     address_sock.sin6_family = AF_INET6;
     address_sock.sin6_port = htons(1024);
     address_sock.sin6_addr = in6addr_any;
@@ -133,6 +134,12 @@ int main(int argc, char *argv[]){
     r = setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, &optval, sizeof(optval));
     if (r < 0) 
         perror("erreur réutilisation de port impossible");
+
+    r = bind(sock, (struct sockaddr *) &address_sock, sizeof(address_sock));
+    if (r < 0) {
+        perror("erreur bind");
+        exit(2);
+    }
 
     r = listen(sock, 0);
     if (r < 0) {

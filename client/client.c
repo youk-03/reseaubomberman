@@ -138,6 +138,8 @@ int send_req() {
       s += sent;
     }
 
+    return 0; // J'ai mis ça pour éviter le warning
+
 }
 
 int main(int argc, char *argv[]) {
