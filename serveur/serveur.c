@@ -17,6 +17,9 @@
 
 #define SIZE_BUF 256
 
+static int port_nb = 24000;
+static int addr_nb = 1;
+
 pthread_mutex_t verrou = PTHREAD_MUTEX_INITIALIZER; // utiliser pour ajouter des joueurs à une partie
 
 // Pour compiler : gcc -DMAC serveur.c -o serveur
@@ -29,7 +32,7 @@ typedef struct joueur{
 typedef struct partie4v4{
     joueur * joueurs[4];
     int port_multi; // port de multidiffusion
-    char * addr_multi; // adresse de multidiffusion
+    char * addr_multi; // adresse de multidiffusion FF12:
     int port; // port pour recevoir des messages
 } partie4v4;
 
@@ -66,7 +69,14 @@ joueur * ajoute_joueur(partie4v4* p, int sock){ // Peut-être bouger dans un aut
 partie4v4 * nouvelle_partie4v4(){
     partie4v4 * p = malloc(sizeof(partie4v4));
     memset(p, 0, sizeof(partie4v4));
-
+    p->port = port_nb;
+    port_nb ++;
+    p->port_multi = port_nb;
+    port_nb++;
+    char str[50];
+    sprintf(str, "FF12:ABCD:1234:%d:AAAA:BBBB:CCCC:DDDD",addr_nb++ );
+    p->addr_multi = str;
+    return p;
 }
 
 int partie_prete(partie4v4 p){
@@ -123,18 +133,16 @@ void *serve(void *arg) { // mettre des limites d'attente sur les recv
     memset(&mess, 0, sizeof(mess));
     mess.CODEREQ = 9; // TODO: j'ai pas géré le codage en big-endian
     mess.ID = j->id;
-    //mess.PORTUDP =   TODO
-    // mess.PORTMDIFF
-    // mes.ARDMDIFF utiliser inet_pton ?
-    
+    mess.PORTUDP = htons(a.partie->port);
+    mess.PORTMDIFF = htons(a.partie->port_multi);
+    inet_pton(AF_INET6, a.partie->addr_multi, &mess.ADRMDIFF ); // C'est OK ?
 
-    memset(buf, 0, SIZE_BUF);
-    sprintf(buf, "Infos du joueur");
+
     int ecrit = 0;
-    while (ecrit<strlen(buf)){
-        ecrit += send(sock, buf + ecrit, strlen(buf)-ecrit, 0);
+    while (ecrit<sizeof(mess)){
+        ecrit += send(sock, &mess + ecrit, sizeof(mess)-ecrit, 0); // ???
     }
-    printf("envoye = %s\n", buf);
+    printf("envoye\n");
 
     // attendre le message "prêt" du joueur
 
@@ -208,8 +216,7 @@ int main(int argc, char *argv[]){
     }
     /* TODO : créer une partie vide puis et faire en sorte qu'on envoie 
     le pointeur vers les parties à compléter dans serve */
-    partie4v4 * p4v4 = malloc(sizeof(partie4v4));
-    memset(p4v4, 0, sizeof(partie4v4));
+    partie4v4 * p4v4 = nouvelle_partie4v4();
 
     while(1){
         // accepte un client

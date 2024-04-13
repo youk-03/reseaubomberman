@@ -27,7 +27,7 @@ typedef struct message_debut_serveur {
     uint16_t EQ : 1;
     uint16_t PORTUDP;
     uint16_t PORTMDIFF;
-    uint16_t ADRMDIFF[8];
+    uint16_t ADRMDIFF[8]; // sinon unigned char ADRMDIFF[16] avec inet_pton
 } message_debut_serveur;
 
 /* déroulement d'une partie */
