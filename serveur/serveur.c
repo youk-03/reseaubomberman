@@ -6,6 +6,7 @@
 #include <string.h>
 #include <unistd.h>
 #include <pthread.h>
+#include "../format_messages.h"
 
 #ifdef MAC
 #ifdef SO_REUSEADDR
@@ -21,14 +22,14 @@ pthread_mutex_t verrou = PTHREAD_MUTEX_INITIALIZER; // utiliser pour ajouter des
 // Pour compiler : gcc -DMAC serveur.c -o serveur
 typedef struct joueur{
     int sock;
-    int id;
+    int id; // entre 0 et 3
     int pret;
 } joueur;
 
 typedef struct partie4v4{
     joueur * joueurs[4];
-    char * adresse; // adresse IPv6
     int port_multi; // port de multidiffusion
+    char * addr_multi; // adresse de multidiffusion
     int port; // port pour recevoir des messages
 } partie4v4;
 
@@ -38,10 +39,10 @@ typedef struct arg_serve{
 } arg_serve;
 
 
-joueur * nouveau_joueur(int sock){
+joueur * nouveau_joueur(int sock, int i){
     joueur * res = malloc(sizeof(joueur));
     res->sock = sock;
-    res->id = 1; // TODO :générer un id aléatoire ou incrépenter un compte
+    res->id = i;
     res->pret = 0;
     return res;
 }
@@ -51,7 +52,7 @@ joueur * ajoute_joueur(partie4v4* p, int sock){ // Peut-être bouger dans un aut
     pthread_mutex_lock(&verrou);
     for (int i=0; i<4; i++){
         if (p->joueurs[i]==NULL){
-            joueur * j = nouveau_joueur(sock);
+            joueur * j = nouveau_joueur(sock, i);
             p->joueurs[i] = j;
             printf("Joueur ajouté à la partie \n");
             pthread_mutex_unlock(&verrou);
@@ -60,6 +61,12 @@ joueur * ajoute_joueur(partie4v4* p, int sock){ // Peut-être bouger dans un aut
     }
     pthread_mutex_unlock(&verrou);
     return NULL;
+}
+
+partie4v4 * nouvelle_partie4v4(){
+    partie4v4 * p = malloc(sizeof(partie4v4));
+    memset(p, 0, sizeof(partie4v4));
+
 }
 
 int partie_prete(partie4v4 p){
@@ -112,6 +119,15 @@ void *serve(void *arg) { // mettre des limites d'attente sur les recv
     - port
     */
 
+    message_debut_serveur mess;
+    memset(&mess, 0, sizeof(mess));
+    mess.CODEREQ = 9; // TODO: j'ai pas géré le codage en big-endian
+    mess.ID = j->id;
+    //mess.PORTUDP =   TODO
+    // mess.PORTMDIFF
+    // mes.ARDMDIFF utiliser inet_pton ?
+    
+
     memset(buf, 0, SIZE_BUF);
     sprintf(buf, "Infos du joueur");
     int ecrit = 0;
@@ -139,7 +155,7 @@ void *serve(void *arg) { // mettre des limites d'attente sur les recv
     }
     printf("recu : %s\n", buf);
 
-    j->pret = 1 ; // mettre un mutex ? normalement seule ce thread est sensé écrire dans ce joueur
+    j->pret = 1 ; // mettre un mutex ? normalement seul ce thread est sensé écrire dans ce joueur
 
 
 
@@ -227,15 +243,6 @@ int main(int argc, char *argv[]){
 
     close(sock);
     return 0;
-
-
-
-
-    /* Envoie données au joueur et l'ajoute à une partie */
-
-    /* Attends l'aval de tous les joueurs */
-
-    /* Début de partie : multidiffuse la grille de jeu initiale */
 
 
 
