@@ -131,8 +131,7 @@ void *serve(void *arg) { // mettre des limites d'attente sur les recv
 
     message_debut_serveur mess;
     memset(&mess, 0, sizeof(mess));
-    mess.CODEREQ = 9; // TODO: j'ai pas géré le codage en big-endian
-    mess.ID = j->id;
+    mess.CODEREQ_ID_EQ = htons((13<<j->id)|9);
     mess.PORTUDP = htons(a.partie->port);
     mess.PORTMDIFF = htons(a.partie->port_multi);
     inet_pton(AF_INET6, a.partie->addr_multi, &mess.ADRMDIFF ); // C'est OK ?
