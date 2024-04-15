@@ -8,6 +8,18 @@
 
 /* intégrer et démarrer une partie */
 
+// peut-être pas
+// typedef struct message_debut_client {
+//     uint16_t CODEREQ : 13;
+//     uint16_t ID : 2;
+//     uint16_t EQ : 1;
+// } message_debut_client ;
+
+typedef struct message_debut_client {
+    uint16_t CODEREQ_IQ_EQ;
+} message_debut_client ;
+
+
 
 
 /*  déroulement de la partie */
@@ -29,6 +41,7 @@ typedef struct message_debut_serveur {
 } message_debut_serveur;
 
 /* déroulement d'une partie */
+
 
 /* le tchat */
 

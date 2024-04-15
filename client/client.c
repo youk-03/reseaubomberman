@@ -7,10 +7,31 @@
 #include <string.h>
 #include <unistd.h>
 #include <pthread.h>
+#include "../format_messages.h"
 
 #define PORT_TCP  1024
 #define ADDR_TCP "fdc7:9dd5:2c66:be86:7e57:58ff:fe68:afa1" //à changer
 #define BUF_SIZE 256
+
+
+// peut-être pas
+// int join_req(message_debut_client* msg_client, int mode) {// à bouger vers un autre fichier
+//     msg_client->CODEREQ=htons(mode);
+// }
+
+// int ready_req(message_debut_client* msg_client, int team_id, int player_id) {
+//   msg_client->EQ=htons(team_id);
+//   msg_client->ID=htons(player_id);
+// }
+
+int join_req(message_debut_client* msg_client, int mode) { // à bouger vers un autre fichier
+  msg_client->CODEREQ_IQ_EQ=htons(mode);
+}
+
+//mode est un peu redondant, je le remplacerai plus tard avec un |
+int ready_req(message_debut_client* msg_client, int mode, int id, int team) {
+  msg_client->CODEREQ_IQ_EQ=htons((15<<team) | (13<<id) | mode);
+}
 
 
 int send_req() {
@@ -143,5 +164,7 @@ int send_req() {
 }
 
 int main(int argc, char *argv[]) {
-  int i=send_req();
+ // int i=send_req();
 }
+
+//100011
