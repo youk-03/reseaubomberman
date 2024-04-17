@@ -109,6 +109,9 @@ void *serve(void *arg) { // mettre des limites d'attente sur les recv
     }
     printf("recu \n");
 
+    int codereq = mess_client.CODEREQ_IQ_EQ & 0b1111111111111; // pour lire 13 bits
+    // pour récupérer id -> on décalle de 13 dans l'autre sens ( >>13) & 0b11
+
     /*if (mess_client.CODEREQ_IQ_EQ)*/ // il faut lire CODEREQ et créer un partie en conséquent
 
     // Lire les données reçu et ajouter le joueur à une partie
