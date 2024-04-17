@@ -92,12 +92,11 @@ void *serve(void *arg) { // mettre des limites d'attente sur les recv
     int sock = a.sock;
   
   // ** recevoir premier message : type de partie **
-
-    char buf[SIZE_BUF]; // TODO : à changer -> utiliser une struct
-    memset(buf, 0, sizeof(buf));
+    message_debut_client mess_client;  // Je sais pas si ça marche, à tester avec le client ------------
+    memset(&mess_client, 0, sizeof(mess_client));
     int recu = 0;
-    while(recu<16) { // Je crois que c'est la taille du message
-        int r = recv(sock, buf+recu, SIZE_BUF, 0);
+    while(recu<sizeof(message_debut_client)) {
+        int r = recv(sock, (&mess_client)+recu, sizeof(mess_client)-recu, 0);
         if (r<0){
             perror("recv");
             close(sock);
@@ -108,7 +107,9 @@ void *serve(void *arg) { // mettre des limites d'attente sur les recv
         }
         recu += r;
     }
-    printf("recu : %s\n", buf);
+    printf("recu \n");
+
+    /*if (mess_client.CODEREQ_IQ_EQ)*/ // il faut lire CODEREQ et créer un partie en conséquent
 
     // Lire les données reçu et ajouter le joueur à une partie
     /* TODO : if ... partie4v4 else partie2v2 */
@@ -121,14 +122,7 @@ void *serve(void *arg) { // mettre des limites d'attente sur les recv
         return NULL;
     }
 
-    /* Envoyer données au joueur 
-    - identifiant
-    - numéro d'équipe ?
-    - adresse IPv6
-    - port multi
-    - port
-    */
-
+   // Remplissage de la struct
     message_debut_serveur mess;
     memset(&mess, 0, sizeof(mess));
     mess.CODEREQ_ID_EQ = htons((13<<j->id)|9);
@@ -145,11 +139,11 @@ void *serve(void *arg) { // mettre des limites d'attente sur les recv
 
     // attendre le message "prêt" du joueur
 
-    memset(buf, 0, SIZE_BUF);
+    memset(&mess_client, 0, sizeof(mess_client));
 
     recu = 0;
-    while(recu<16) { // Je crois que c'est la taille du message
-        int r = recv(sock, buf+recu, SIZE_BUF, 0);
+    while(recu<sizeof(message_debut_client)) {
+        int r = recv(sock, &mess_client+recu, sizeof(mess_client)-recu, 0);
         if (r<0){
             perror("recv");
             close(sock);
@@ -160,7 +154,7 @@ void *serve(void *arg) { // mettre des limites d'attente sur les recv
         }
         recu += r;
     }
-    printf("recu : %s\n", buf);
+    printf("recu \n");
 
     j->pret = 1 ; // mettre un mutex ? normalement seul ce thread est sensé écrire dans ce joueur
 
