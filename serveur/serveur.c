@@ -145,13 +145,14 @@ void *serve(void *arg) { // mettre des limites d'attente sur les recv
    // Remplissage de la struct
     message_debut_serveur mess;
     memset(&mess, 0, sizeof(mess));
-    mess.CODEREQ_ID_EQ = htons((13<<j->id)|9);
 
     if (codereq==1) { // partie 4v4
+        mess.CODEREQ_ID_EQ = htons((13<<j->id)|9);
         mess.PORTUDP = htons(a.partie4v4->port);
         mess.PORTMDIFF = htons(a.partie4v4->port_multi);
         inet_pton(AF_INET6, a.partie4v4->addr_multi, &mess.ADRMDIFF ); // C'est OK ?
     } else { // partie2v2
+        mess.CODEREQ_ID_EQ = htons((15<<(j->id)%2)|(13<<j->id)|10);
         mess.PORTUDP = htons(a.partie2v2->port);
         mess.PORTMDIFF = htons(a.partie2v2->port_multi);
         inet_pton(AF_INET6, a.partie2v2->addr_multi, &mess.ADRMDIFF ); // C'est OK ?
@@ -165,6 +166,8 @@ void *serve(void *arg) { // mettre des limites d'attente sur les recv
     printf("envoye\n");
 
     // attendre le message "prêt" du joueur
+
+
 
     memset(&mess_client, 0, sizeof(mess_client));
 
@@ -182,6 +185,34 @@ void *serve(void *arg) { // mettre des limites d'attente sur les recv
         recu += r;
     }
     printf("recu \n");
+
+    // vérifier les infos du message reçu
+    // codereq
+    int codereq2 = mess_client.CODEREQ_IQ_EQ & 0b1111111111111;
+    if (codereq2 != codereq+2) {
+        printf("erreur valeur codereq dans message pret\n");
+        close(sock);
+        free(arg);
+        return NULL;
+    }
+    // id
+    int id = ( mess_client.CODEREQ_IQ_EQ >>13) & 0b11;
+    if (id != j->id){
+        printf("erreur valeur id dans message pret\n");
+        close(sock);
+        free(arg);
+        return NULL;
+    }
+    // eq
+    if (codereq==2){
+        int eq = (mess_client.CODEREQ_IQ_EQ >> 13) & 0b1;
+        if (eq != id%2) {
+            printf("erreur valeur id dans message pret\n");
+            close(sock);
+            free(arg);
+            return NULL;
+        }
+    }
 
     j->pret = 1 ; // mettre un mutex ? normalement seul ce thread est sensé écrire dans ce joueur
 
