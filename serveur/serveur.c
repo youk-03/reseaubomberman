@@ -29,15 +29,17 @@ typedef struct joueur{
     int pret;
 } joueur;
 
-typedef struct partie4v4{
-    joueur * joueurs[4];
+typedef struct partie {
+    joueur * joueurs[4]; // les équipes sont faites en fonction de la parité
     int port_multi; // port de multidiffusion
     char * addr_multi; // adresse de multidiffusion FF12:
     int port; // port pour recevoir des messages
-} partie4v4;
+    int equipes; // vaut 1 pour une partie en équipe et 0 sinon
+} partie;
 
 typedef struct arg_serve{
-    partie4v4 * partie; // les parties qui ont encore de la place -> ajouter partie2v2
+    partie * partie4v4; // les parties qui ont encore de la place -> ajouter partie2v2
+    partie * partie2v2;
     int sock;
 } arg_serve;
 
@@ -51,7 +53,7 @@ joueur * nouveau_joueur(int sock, int i){
 }
 
 
-joueur * ajoute_joueur(partie4v4* p, int sock){ // Peut-être bouger dans un autre fichier
+joueur * ajoute_joueur(partie * p, int sock){ // Peut-être bouger dans un autre fichier
     pthread_mutex_lock(&verrou);
     for (int i=0; i<4; i++){
         if (p->joueurs[i]==NULL){
@@ -66,12 +68,13 @@ joueur * ajoute_joueur(partie4v4* p, int sock){ // Peut-être bouger dans un aut
     return NULL;
 }
 
-partie4v4 * nouvelle_partie4v4(){
-    partie4v4 * p = malloc(sizeof(partie4v4));
-    memset(p, 0, sizeof(partie4v4));
+partie * nouvelle_partie(int equipes){
+    partie * p = malloc(sizeof(partie));
+    memset(p, 0, sizeof(partie));
     p->port = port_nb;
     port_nb ++;
     p->port_multi = port_nb;
+    p->equipes = equipes;
     port_nb++;
     char str[50];
     sprintf(str, "FF12:ABCD:1234:%d:AAAA:BBBB:CCCC:DDDD",addr_nb++ );
@@ -79,7 +82,7 @@ partie4v4 * nouvelle_partie4v4(){
     return p;
 }
 
-int partie_prete(partie4v4 p){
+int partie_prete(partie p){
     for (int i=0; i<4; i++){
         if (p.joueurs[i]==NULL) return 0;
         if (!p.joueurs[i]->pret) return 0;
@@ -112,14 +115,28 @@ void *serve(void *arg) { // mettre des limites d'attente sur les recv
     int codereq = mess_client.CODEREQ_IQ_EQ & 0b1111111111111; // pour lire 13 bits
     // pour récupérer id -> on décalle de 13 dans l'autre sens ( >>13) & 0b11
 
-    /*if (mess_client.CODEREQ_IQ_EQ)*/ // il faut lire CODEREQ et créer un partie en conséquent
 
-    // Lire les données reçu et ajouter le joueur à une partie
-    /* TODO : if ... partie4v4 else partie2v2 */
-    
-    joueur * j = ajoute_joueur(a.partie, sock);
-    if (j==NULL){
-        printf("Erreur le joueur n'a pas pu être ajouté");
+    joueur * j;
+    if (codereq==1) {
+        // ajoute le joueur à une partie 4v4
+        joueur * j = ajoute_joueur(a.partie4v4, sock);
+        if (j==NULL){
+            printf("Erreur le joueur n'a pas pu être ajouté\n");
+            close(sock);
+            free(arg);
+            return NULL;
+        }
+    } else if (codereq==2){
+        // ajoute le joueur à une partie2v2
+        joueur * j = ajoute_joueur(a.partie2v2, sock);
+        if (j==NULL){
+            printf("Erreur le joueur n'a pas pu être ajouté\n");
+            close(sock);
+            free(arg);
+            return NULL;
+        }
+    } else {
+        printf("Valeur de codereq incorrecte\n");
         close(sock);
         free(arg);
         return NULL;
@@ -129,10 +146,17 @@ void *serve(void *arg) { // mettre des limites d'attente sur les recv
     message_debut_serveur mess;
     memset(&mess, 0, sizeof(mess));
     mess.CODEREQ_ID_EQ = htons((13<<j->id)|9);
-    mess.PORTUDP = htons(a.partie->port);
-    mess.PORTMDIFF = htons(a.partie->port_multi);
-    inet_pton(AF_INET6, a.partie->addr_multi, &mess.ADRMDIFF ); // C'est OK ?
 
+    if (codereq==1) { // partie 4v4
+        mess.PORTUDP = htons(a.partie4v4->port);
+        mess.PORTMDIFF = htons(a.partie4v4->port_multi);
+        inet_pton(AF_INET6, a.partie4v4->addr_multi, &mess.ADRMDIFF ); // C'est OK ?
+    } else { // partie2v2
+        mess.PORTUDP = htons(a.partie2v2->port);
+        mess.PORTMDIFF = htons(a.partie2v2->port_multi);
+        inet_pton(AF_INET6, a.partie2v2->addr_multi, &mess.ADRMDIFF ); // C'est OK ?
+
+    }
 
     int ecrit = 0;
     while (ecrit<sizeof(mess)){
@@ -212,7 +236,8 @@ int main(int argc, char *argv[]){
     }
     /* TODO : créer une partie vide puis et faire en sorte qu'on envoie 
     le pointeur vers les parties à compléter dans serve */
-    partie4v4 * p4v4 = nouvelle_partie4v4();
+    partie * p4v4 = nouvelle_partie(0);
+    partie * p2v2 = nouvelle_partie(1);
 
     while(1){
         // accepte un client
@@ -223,7 +248,8 @@ int main(int argc, char *argv[]){
 
         if (sock_client >= 0) {
             arg_serve * arg = malloc(sizeof(arg_serve));
-            arg->partie = p4v4;
+            arg->partie4v4 = p4v4;
+            arg->partie2v2 = p2v2;
             arg->sock = sock_client;
 
             pthread_t thread;
