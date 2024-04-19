@@ -24,17 +24,23 @@
 //   msg_client->ID=htons(player_id);
 // }
 
-int join_req(message_debut_client* msg_client, int mode) { // à bouger vers un autre fichier
-  msg_client->CODEREQ_IQ_EQ=htons(mode);
+int join_req(message_debut_client* msg_client, int mode) { //1 si solo, 2 si équipes,à bouger vers un autre fichier
+  msg_client->CODEREQ_IQ_EQ = htons(mode);
+  return 0;
 }
 
 //mode est un peu redondant, je le remplacerai plus tard avec un |
 int ready_req(message_debut_client* msg_client, int mode, int id, int team) {
-  msg_client->CODEREQ_IQ_EQ=htons((15<<team) | (13<<id) | mode);
+  msg_client->CODEREQ_IQ_EQ = htons((15<<team) | (13<<id) | mode);
+  return 0;
 }
 
 
 int send_req() {
+
+  int mode = 1;
+  int id = 3;
+  int team = 2;
   
     /*Initialisations pour les communications en TCP*/
 
@@ -49,7 +55,7 @@ int send_req() {
     memset(&address_sock_tcp, 0,sizeof(address_sock_tcp));
     address_sock_tcp.sin6_family = AF_INET6;
     address_sock_tcp.sin6_port = htons(PORT_TCP);
-    conv=inet_pton(AF_INET6, ADDR_TCP, &address_sock_tcp.sin6_addr);
+    conv = inet_pton(AF_INET6, ADDR_TCP, &address_sock_tcp.sin6_addr);
     if (conv != 1) {
       perror("erreur conversion adresse tcp");
     }
@@ -63,33 +69,51 @@ int send_req() {
 
     /*envoi de la première "requête" */
 
-    //remplacer par un select/poll éventuellement
-    char bufsend[BUF_SIZE];
-    memset(bufsend, 0, BUF_SIZE);
-    sprintf(bufsend, "mode choisi (cl)");
+    //todo: remplacer par un select/poll éventuellement
 
+    message_debut_client * start_msg = malloc(sizeof(message_debut_client)); //verif
+    memset(start_msg, 0, sizeof(message_debut_client));
+    join_req(start_msg,mode);
+
+    char* serialized_msg = malloc(BUF_SIZE*sizeof(char));
+    memcpy(serialized_msg,(char*)start_msg,sizeof(start_msg)); //
+    //todo: récuperer l'input de l'utilisateur
+
+    
+    //on passe le mode (pour tester: solo/1) dans la struct
+    
     int s = 0;
-    while (s < BUF_SIZE) {
-      int sent = send(sock_tcp, bufsend + s, BUF_SIZE - s, 0);
+  
+    while (s < sizeof(serialized_msg)) {
+      int sent = send(sock_tcp, serialized_msg + s, sizeof(serialized_msg) - s, 0);
       if (sent == -1) {
+        perror("erreur de send");
         close(sock_tcp);
         return 1 ;
       }
       s += sent;
     }
-
+ 
     /*reception des données d'identification*/
-    char bufrcv[BUF_SIZE];
-    memset(bufrcv, 0, BUF_SIZE);
+    char* serialized_serv_msg = malloc(BUF_SIZE*sizeof(char));
+    memset(serialized_serv_msg, 0, BUF_SIZE);
 
-    int recu = recv(sock_tcp, bufrcv, BUF_SIZE * sizeof(char), 0);
+
+    int recu = recv(sock_tcp, serialized_serv_msg, sizeof(serialized_serv_msg), 0);
     if (recu < 0){
       perror("erreur reception donnees initiales (client)");
       close(sock_tcp);
       return 1;
     }
+    puts("send start effectue (cli)");
 
-    printf("le client a reçu de la part du serveur : %s \n", bufrcv);
+    //printf("le client a reçu de la part du serveur : %s \n", bufrcv);
+
+    //conversion du string en struct
+    message_debut_serveur * serv_msg = malloc(sizeof(message_debut_serveur));
+    memset(serv_msg, 0, sizeof(message_debut_serveur));
+    memcpy(serv_msg,(message_debut_serveur*)serialized_serv_msg,sizeof(message_debut_serveur));
+    //c'est à partir de serv_msg qu'on récupère les données envoyées par le serveur
 
 
     //là, on suppose que le client a reçu l'adresse de multidiffusion
@@ -144,27 +168,40 @@ int send_req() {
       return 1 ;
     }
 
-    //envoi d'un message pour annoncer qu'on est prêt
+    //remplissage de la struct avec les données obtenues
+    memset(start_msg, 0, sizeof(message_debut_client));
+    ready_req(start_msg,mode,id,team);
 
-    memset(bufsend, 0, BUF_SIZE);
-    sprintf(bufsend, "prêt (client)");
+    //conversion de la struct en string
+    char* serialized_ready_msg = malloc(BUF_SIZE*sizeof(char));
+    memcpy(serialized_ready_msg,(char*)start_msg,sizeof(start_msg)); //
 
     s = 0;
-    while (s < BUF_SIZE) {
-      int sent = send(sock_tcp, bufsend + s, BUF_SIZE - s, 0);
+    while (s < sizeof(serialized_ready_msg)) {
+      int sent = send(sock_tcp, serialized_ready_msg + s, sizeof(serialized_ready_msg) - s, 0);
       if (sent == -1) {
+        perror("erreur de send");
         close(sock_tcp);
         return 1 ;
       }
       s += sent;
     }
 
+    puts("send ready effectue (cli)");
+
+
+    free(serv_msg);
+    free(start_msg);
+    free(serialized_msg);
+    free(serialized_serv_msg);
+    free(serialized_ready_msg);
+  
+
+
     return 0; // J'ai mis ça pour éviter le warning
 
 }
 
 int main(int argc, char *argv[]) {
- // int i=send_req();
+  int i = send_req();
 }
-
-//100011
