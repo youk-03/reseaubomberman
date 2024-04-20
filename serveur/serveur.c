@@ -15,7 +15,7 @@
 #define SO_REUSEADDR SO_REUSEPORT
 #endif
 
-#define SIZE_BUF 256
+#define BUF_SIZE 256
 
 static int port_nb = 24000;
 static int addr_nb = 1;
@@ -104,7 +104,7 @@ void *serve(void *arg) { // mettre des limites d'attente sur les recv
     memset(buf, 0, sizeof(buf));
     int recu = 0;
     while(recu<sizeof(mess_client)) { 
-        int r = recv(sock, buf+recu, sizeof(mess_client), 0);
+        int r = recv(sock, buf+recu, sizeof(message_debut_client), 0);
         if (r<0){
             perror("recv");
             close(sock);
@@ -126,7 +126,7 @@ void *serve(void *arg) { // mettre des limites d'attente sur les recv
     joueur * j;
     if (codereq==1) {
         // ajoute le joueur à une partie 4v4
-        joueur * j = ajoute_joueur(a.partie4v4, sock);
+        j = ajoute_joueur(a.partie4v4, sock);
         if (j==NULL){
             printf("Erreur le joueur n'a pas pu être ajouté\n");
             close(sock);
@@ -135,7 +135,7 @@ void *serve(void *arg) { // mettre des limites d'attente sur les recv
         }
     } else if (codereq==2){
         // ajoute le joueur à une partie2v2
-        joueur * j = ajoute_joueur(a.partie2v2, sock);
+        j = ajoute_joueur(a.partie2v2, sock);
         if (j==NULL){
             printf("Erreur le joueur n'a pas pu être ajouté\n");
             close(sock);
@@ -148,39 +148,40 @@ void *serve(void *arg) { // mettre des limites d'attente sur les recv
         free(arg);
         return NULL;
     }
-
    // Remplissage de la struct
-    message_debut_serveur mess;
-    memset(&mess, 0, sizeof(mess));
+    message_debut_serveur * mess = malloc(sizeof(message_debut_serveur));
+    memset(mess, 0, sizeof(message_debut_serveur));
 
     if (codereq==1) { // partie 4v4
-        mess.CODEREQ_ID_EQ = htons((13<<j->id)|9);
-        mess.PORTUDP = htons(a.partie4v4->port);
-        mess.PORTMDIFF = htons(a.partie4v4->port_multi);
-        inet_pton(AF_INET6, a.partie4v4->addr_multi, &mess.ADRMDIFF ); // C'est OK ?
+        mess->CODEREQ_ID_EQ = htons((13<<j->id)|9);
+        mess->PORTUDP = htons(a.partie4v4->port);
+        mess->PORTMDIFF = htons(a.partie4v4->port_multi);
+        //inet_pton(AF_INET6, a.partie4v4->addr_multi, &mess.ADRMDIFF ); // C'est OK ?
     } else { // partie2v2
-        mess.CODEREQ_ID_EQ = htons((15<<(j->id)%2)|(13<<j->id)|10);
-        mess.PORTUDP = htons(a.partie2v2->port);
-        mess.PORTMDIFF = htons(a.partie2v2->port_multi);
-        inet_pton(AF_INET6, a.partie2v2->addr_multi, &mess.ADRMDIFF ); // C'est OK ?
+        mess->CODEREQ_ID_EQ = htons((15<<(j->id)%2)|(13<<j->id)|10);
+        mess->PORTUDP = htons(a.partie2v2->port);
+        mess->PORTMDIFF = htons(a.partie2v2->port_multi);
+        //inet_pton(AF_INET6, a.partie2v2->addr_multi, &mess.ADRMDIFF ); // C'est OK ?
 
     }
-
+    char* serialized_msg = malloc(BUF_SIZE*sizeof(char));
+    memcpy(serialized_msg,(char*)mess,sizeof(message_debut_serveur));
     int ecrit = 0;
     while (ecrit<sizeof(mess)){
         ecrit += send(sock, &mess + ecrit, sizeof(mess)-ecrit, 0); // ???
     }
     printf("envoye\n");
-
+    free(mess);
     // attendre le message "prêt" du joueur
 
+   // Je sais pas si ça marche, à tester avec le client ------------ normalement ça marche, on croise les doigts 
+    memset(mess_client, 0, sizeof(*mess_client));
 
-
-    memset(&mess_client, 0, sizeof(*mess_client));
+    memset(buf, 0, sizeof(buf));
 
     recu = 0;
-    while(recu<sizeof(message_debut_client)) {
-        int r = recv(sock, &mess_client+recu, sizeof(mess_client)-recu, 0);
+    while(recu<sizeof(message_debut_client)) { 
+        int r = recv(sock, buf+recu, sizeof(message_debut_client), 0);
         if (r<0){
             perror("recv");
             close(sock);
@@ -191,11 +192,14 @@ void *serve(void *arg) { // mettre des limites d'attente sur les recv
         }
         recu += r;
     }
+     memcpy(mess_client,(message_debut_client*)&buf,sizeof(message_debut_client));
+
     printf("recu \n");
 
     // vérifier les infos du message reçu
     // codereq
     int codereq2 = mess_client->CODEREQ_IQ_EQ & 0b1111111111111;
+    printf ("codereq2 = %d\n",codereq2);
     if (codereq2 != codereq+2) {
         printf("erreur valeur codereq dans message pret\n");
         close(sock);
