@@ -118,8 +118,8 @@ void *serve(void *arg) { // mettre des limites d'attente sur les recv
 
     //printf("recu : %s\n", buf); // n'affichera pas grand chose 
     memcpy(mess_client,(message_debut_client*)&buf,sizeof(message_debut_client));
-
-    int codereq =ntohs(mess_client->CODEREQ_IQ_EQ & 0b1111111111111); // pour lire 13 bits
+    uint16_t codereq_id_eq = ntohs(mess_client->CODEREQ_IQ_EQ);
+    uint16_t codereq = codereq_id_eq & 0b1111111111111; // pour lire 13 bits
     // pour récupérer id -> on décalle de 13 dans l'autre sens ( >>13) & 0b11
     printf("codereq: %d \n",codereq);
 
