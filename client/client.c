@@ -31,7 +31,7 @@ int join_req(message_debut_client* msg_client, int mode) { //1 si solo, 2 si éq
 
 //mode est un peu redondant, je le remplacerai plus tard avec un |
 int ready_req(message_debut_client* msg_client, int mode, int id, int team) {
-  msg_client->CODEREQ_IQ_EQ = htons((15<<team) | (13<<id) | mode);
+  msg_client->CODEREQ_IQ_EQ = htons((team<<15) | (id<<13) | (mode+2));
   return 0;
 }
 

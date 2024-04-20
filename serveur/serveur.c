@@ -198,7 +198,9 @@ void *serve(void *arg) { // mettre des limites d'attente sur les recv
 
     // vérifier les infos du message reçu
     // codereq
-    int codereq2 = mess_client->CODEREQ_IQ_EQ & 0b1111111111111;
+    uint16_t v = ntohs(mess_client->CODEREQ_IQ_EQ);
+
+    uint16_t codereq2 = v & 0b1111111111111;
     printf ("codereq2 = %d\n",codereq2);
     if (codereq2 != codereq+2) {
         printf("erreur valeur codereq dans message pret\n");
@@ -207,7 +209,7 @@ void *serve(void *arg) { // mettre des limites d'attente sur les recv
         return NULL;
     }
     // id
-    int id = ( mess_client->CODEREQ_IQ_EQ >>13) & 0b11;
+    uint16_t id = ( v >>13) & 0b11;
     if (id != j->id){
         printf("erreur valeur id dans message pret\n");
         close(sock);
@@ -216,7 +218,7 @@ void *serve(void *arg) { // mettre des limites d'attente sur les recv
     }
     // eq
     if (codereq==2){
-        int eq = (mess_client->CODEREQ_IQ_EQ >> 13) & 0b1;
+        int eq = (v >> 13) & 0b1;
         if (eq != id%2) {
             printf("erreur valeur eq dans message pret\n");
             close(sock);
