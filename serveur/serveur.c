@@ -95,11 +95,16 @@ void *serve(void *arg) { // mettre des limites d'attente sur les recv
     int sock = a.sock;
   
   // ** recevoir premier message : type de partie **
-    message_debut_client mess_client;  // Je sais pas si ça marche, à tester avec le client ------------
-    memset(&mess_client, 0, sizeof(mess_client));
+
+    //on reçoit la struct sous forme de string, on la reconvertit en struct et on la copie dans mess_client
+    message_debut_client * mess_client = malloc(sizeof(message_debut_client));  // Je sais pas si ça marche, à tester avec le client ------------ normalement ça marche, on croise les doigts 
+    memset(mess_client, 0, sizeof(*mess_client));
+
+    char buf[sizeof(mess_client)];
+    memset(buf, 0, sizeof(buf));
     int recu = 0;
-    while(recu<sizeof(message_debut_client)) {
-        int r = recv(sock, (&mess_client)+recu, sizeof(mess_client)-recu, 0);
+    while(recu<sizeof(mess_client)) { 
+        int r = recv(sock, buf+recu, sizeof(mess_client), 0);
         if (r<0){
             perror("recv");
             close(sock);
@@ -110,11 +115,13 @@ void *serve(void *arg) { // mettre des limites d'attente sur les recv
         }
         recu += r;
     }
-    printf("recu \n");
 
-    int codereq = mess_client.CODEREQ_IQ_EQ & 0b1111111111111; // pour lire 13 bits
+    //printf("recu : %s\n", buf); // n'affichera pas grand chose 
+    memcpy(mess_client,(message_debut_client*)&buf,sizeof(message_debut_client));
+
+    int codereq =ntohs(mess_client->CODEREQ_IQ_EQ & 0b1111111111111); // pour lire 13 bits
     // pour récupérer id -> on décalle de 13 dans l'autre sens ( >>13) & 0b11
-
+    printf("codereq: %d \n",codereq);
 
     joueur * j;
     if (codereq==1) {
@@ -169,7 +176,7 @@ void *serve(void *arg) { // mettre des limites d'attente sur les recv
 
 
 
-    memset(&mess_client, 0, sizeof(mess_client));
+    memset(&mess_client, 0, sizeof(*mess_client));
 
     recu = 0;
     while(recu<sizeof(message_debut_client)) {
@@ -188,7 +195,7 @@ void *serve(void *arg) { // mettre des limites d'attente sur les recv
 
     // vérifier les infos du message reçu
     // codereq
-    int codereq2 = mess_client.CODEREQ_IQ_EQ & 0b1111111111111;
+    int codereq2 = mess_client->CODEREQ_IQ_EQ & 0b1111111111111;
     if (codereq2 != codereq+2) {
         printf("erreur valeur codereq dans message pret\n");
         close(sock);
@@ -196,7 +203,7 @@ void *serve(void *arg) { // mettre des limites d'attente sur les recv
         return NULL;
     }
     // id
-    int id = ( mess_client.CODEREQ_IQ_EQ >>13) & 0b11;
+    int id = ( mess_client->CODEREQ_IQ_EQ >>13) & 0b11;
     if (id != j->id){
         printf("erreur valeur id dans message pret\n");
         close(sock);
@@ -205,7 +212,7 @@ void *serve(void *arg) { // mettre des limites d'attente sur les recv
     }
     // eq
     if (codereq==2){
-        int eq = (mess_client.CODEREQ_IQ_EQ >> 13) & 0b1;
+        int eq = (mess_client->CODEREQ_IQ_EQ >> 13) & 0b1;
         if (eq != id%2) {
             printf("erreur valeur eq dans message pret\n");
             close(sock);
