@@ -207,7 +207,7 @@ void *serve(void *arg) { // mettre des limites d'attente sur les recv
     if (codereq==2){
         int eq = (mess_client.CODEREQ_IQ_EQ >> 13) & 0b1;
         if (eq != id%2) {
-            printf("erreur valeur id dans message pret\n");
+            printf("erreur valeur eq dans message pret\n");
             close(sock);
             free(arg);
             return NULL;
