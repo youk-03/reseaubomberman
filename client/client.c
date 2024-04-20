@@ -71,11 +71,24 @@ int send_req() {
 
     //todo: remplacer par un select/poll éventuellement
 
-    message_debut_client * start_msg = malloc(sizeof(message_debut_client)); //verif
+    message_debut_client * start_msg = malloc(sizeof(message_debut_client)); 
+
+    if (start_msg == NULL) {
+      perror("erreur de malloc");
+      close(sock_tcp);
+      return 1 ;
+    }
     memset(start_msg, 0, sizeof(message_debut_client));
     join_req(start_msg,mode);
 
     char* serialized_msg = malloc(BUF_SIZE*sizeof(char));
+
+     if (serialized_msg == NULL) {
+      perror("erreur de malloc");
+      close(sock_tcp);
+      return 1 ;
+    }
+
     memcpy(serialized_msg,(char*)start_msg,sizeof(start_msg)); //
     //todo: récuperer l'input de l'utilisateur
 
@@ -98,6 +111,12 @@ int send_req() {
     char* serialized_serv_msg = malloc(BUF_SIZE*sizeof(char));
     memset(serialized_serv_msg, 0, BUF_SIZE);
 
+     if (serialized_serv_msg == NULL) {
+      perror("erreur de malloc");
+      close(sock_tcp);
+      return 1 ;
+    }
+
 
     int recu = recv(sock_tcp, serialized_serv_msg, sizeof(serialized_serv_msg), 0);
     if (recu < 0){
@@ -111,6 +130,13 @@ int send_req() {
 
     //conversion du string en struct
     message_debut_serveur * serv_msg = malloc(sizeof(message_debut_serveur));
+
+     if (serv_msg == NULL) {
+      perror("erreur de malloc");
+      close(sock_tcp);
+      return 1 ;
+    }
+
     memset(serv_msg, 0, sizeof(message_debut_serveur));
     memcpy(serv_msg,(message_debut_serveur*)serialized_serv_msg,sizeof(message_debut_serveur));
     //c'est à partir de serv_msg qu'on récupère les données envoyées par le serveur
@@ -124,6 +150,7 @@ int send_req() {
     int sock_udp;
     if((sock_udp = socket(AF_INET6, SOCK_DGRAM, 0)) < 0) {
       perror("echec creation socket udp client");
+      close(sock_tcp);
       return 1;
     }
 
@@ -131,6 +158,7 @@ int send_req() {
     if(setsockopt(sock_udp, SOL_SOCKET, SO_REUSEADDR, &ok, sizeof(ok)) < 0) {
       perror("echec de SO_REUSEADDR (client)");
       close(sock_udp);
+      close(sock_tcp);
       return 1;
     }
 
@@ -145,6 +173,7 @@ int send_req() {
     if(bind(sock_udp,(struct sockaddr*)&addr_rcv_udp,sizeof(addr_rcv_udp))) {
       perror("erreur de bind");
       close(sock_udp);
+      close(sock_tcp);
       return 1 ; 
     }
 
@@ -158,6 +187,8 @@ int send_req() {
     struct ipv6_mreq group ;
     if(inet_pton(AF_INET6,"ff12::1:2:2",&group.ipv6mr_multiaddr.s6_addr)<1){ // à changer, dépend des données envoyées par le serveur
       perror("erreur conversion adresse");
+      close(sock_tcp);
+      close(sock_udp);
       return 1;
     }
     group.ipv6mr_interface= ifindex;
@@ -165,6 +196,7 @@ int send_req() {
     if (setsockopt(sock_udp, IPPROTO_IPV6, IPV6_JOIN_GROUP, &group, sizeof(group))<0) {
       perror ("erreur d'abonnement au groupe");
       close(sock_udp);
+      close(sock_tcp);
       return 1 ;
     }
 
@@ -174,6 +206,14 @@ int send_req() {
 
     //conversion de la struct en string
     char* serialized_ready_msg = malloc(BUF_SIZE*sizeof(char));
+
+     if (start_msg == NULL) {
+      perror("erreur de malloc");
+      close(sock_tcp);
+      close(sock_udp);
+      return 1 ;
+    }
+
     memcpy(serialized_ready_msg,(char*)start_msg,sizeof(start_msg)); //
 
     s = 0;
@@ -182,6 +222,7 @@ int send_req() {
       if (sent == -1) {
         perror("erreur de send");
         close(sock_tcp);
+        close(sock_udp);
         return 1 ;
       }
       s += sent;
@@ -204,4 +245,5 @@ int send_req() {
 
 int main(int argc, char *argv[]) {
   int i = send_req();
+  return 0;
 }
