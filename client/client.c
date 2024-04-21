@@ -124,7 +124,6 @@ int send_req() {
       close(sock_tcp);
       return 1;
     }
-    puts("send start effectue (cli)");
 
     //printf("le client a reçu de la part du serveur : %s \n", bufrcv);
 
@@ -138,10 +137,13 @@ int send_req() {
     }
 
     memset(serv_msg, 0, sizeof(message_debut_serveur));
-    memcpy(serv_msg,(message_debut_serveur*)serialized_serv_msg,sizeof(message_debut_serveur));
+    memcpy(serv_msg,serialized_serv_msg,sizeof(message_debut_serveur));
     //c'est à partir de serv_msg qu'on récupère les données envoyées par le serveur
+        //  printf("codereq_id : %u \n",serv_msg->CODEREQ_ID_EQ);
+        //  printf("portmdiff : %u \n",serv_msg->PORTMDIFF);
+        //  printf("portupd : %u \n",serv_msg->PORTUDP);
 
-
+    
     //là, on suppose que le client a reçu l'adresse de multidiffusion
 
 
