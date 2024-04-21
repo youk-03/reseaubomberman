@@ -167,8 +167,9 @@ void *serve(void *arg) { // mettre des limites d'attente sur les recv
     char* serialized_msg = malloc(BUF_SIZE*sizeof(char));
     memcpy(serialized_msg,(char*)mess,sizeof(message_debut_serveur));
     int ecrit = 0;
-    while (ecrit<sizeof(mess)){
-        ecrit += send(sock, &mess + ecrit, sizeof(mess)-ecrit, 0); // ???
+    
+    while (ecrit<sizeof(serialized_msg)){
+        ecrit += send(sock, serialized_msg + ecrit, sizeof(serialized_msg)-ecrit, 0); // ??? -> on cast la struct en char* et on envoie le char* du résultat
     }
     printf("envoye\n");
     free(mess);
