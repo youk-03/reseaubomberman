@@ -6,6 +6,7 @@
 #include <string.h>
 #include <unistd.h>
 #include <pthread.h>
+#include <net/if.h>
 #include "../format_messages.h"
 #include "partie.h"
 
