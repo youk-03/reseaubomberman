@@ -165,6 +165,10 @@ void *serve(void *arg) { // mettre des limites d'attente sur les recv
 
     j->pret = 1 ; // mettre un mutex ? normalement seul ce thread est sensé écrire dans ce joueur
 
+    
+    // tchat et signalement fin de partie en TCP
+
+
 
 
     close(sock); // a enlever peut-être un jour

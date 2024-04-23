@@ -51,8 +51,10 @@ int partie_prete(partie p){
     return 1;
 }
 
-void *serve_partie(void *p) {
-    // fonction pour le thread de partie
+void *serve_partie(void * arg) { // fonction pour le thread de partie
+    partie p = *(partie *)arg;
+
+    // multidiffuse la grille initiale
 
     return NULL;
 }

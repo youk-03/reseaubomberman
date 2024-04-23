@@ -42,6 +42,22 @@ typedef struct message_debut_serveur {
 
 /* déroulement d'une partie */
 
+    /* Grille complète*/
+typedef struct message_grille_complete {
+    uint16_t CODEREQ_ID_EQ; // big endian
+    uint16_t NUM; // big endian
+    uint8_t HAUTEUR;
+    uint8_t LARGEUR;
+    uint8_t CASE[10]; // Modifier avec la taille du plateau
+} message_grille_complete;
+
+typedef struct message_cases_modifiees{
+    uint16_t CODEREQ_ID_EQ; // big endian
+    uint16_t NUM; // big endian
+    uint8_t NB;
+    uint CASES; // les cases transmises, je suis pas sûre du type
+} message_cases_modifiees;
+
 
 /* le tchat */
 

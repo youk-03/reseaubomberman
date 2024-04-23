@@ -90,7 +90,7 @@ int main(int argc, char *argv[]){
         printf("Partie prête : %d \n", partie_prete(* p4v4));
         if (partie_prete(* p4v4)){
             // lancer thread partie
-            pthread_t thread_partie;
+            pthread_t thread_partie; // TODO : sauvegarder les threads de parties
             if(pthread_create(&thread_partie, NULL, serve_partie, p4v4)){
                 perror("pthread_create : nouvelle partie");
                 continue;
