@@ -66,11 +66,18 @@ void *serve_partie(void * arg) { // fonction pour le thread de partie
 
 
     // multidiffuse la grille initiale
+    // TODO : envoyer les bonnes valeurs
     char buf[100];
     sprintf(buf, "grille initiale");
     int s = sendto(sock_multi, buf, strlen(buf), 0, (struct sockaddr*)&gradr, sizeof(gradr));
     if (s < 0)
         perror("erreur send\n");
+
+
+    // déroulement de la partie
+
+    // TODO : recevoir action et agir
+    // + multidiffusion de la grille régulièremement (un autre thread ?)
 
 
     return NULL;

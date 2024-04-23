@@ -62,4 +62,14 @@ typedef struct message_cases_modifiees{
 
 /* le tchat */
 
+typedef struct message_tchat_serveur{
+    uint16_t CODEREQ_ID_EQ; // big endian
+    uint8_t LEN;
+    char * DATE; // pas sure du type
+} message_tchat_serveur;
+
 /* la fin de partie */
+
+typedef struct message_fin_serveur{
+    uint16_t CODEREQ_ID_EQ; // big endian
+} message_fin_serveur;
