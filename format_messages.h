@@ -51,6 +51,7 @@ typedef struct message_grille_complete {
     uint8_t CASE[10]; // Modifier avec la taille du plateau
 } message_grille_complete;
 
+    /* Cases modifiées */
 typedef struct message_cases_modifiees{
     uint16_t CODEREQ_ID_EQ; // big endian
     uint16_t NUM; // big endian

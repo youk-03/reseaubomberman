@@ -53,8 +53,25 @@ int partie_prete(partie p){
 
 void *serve_partie(void * arg) { // fonction pour le thread de partie
     partie p = *(partie *)arg;
+    
+    int  sock_multi = socket(AF_INET6, SOCK_DGRAM, 0);
+    struct sockaddr_in6 gradr;
+    memset(&gradr, 0, sizeof(gradr));
+    gradr.sin6_family = AF_INET6;
+    inet_pton(AF_INET6, p.addr_multi, &gradr.sin6_addr);
+    gradr.sin6_port = htons(p.port_multi);
+
+    int ifindex = if_nametoindex ("eth0");
+    gradr.sin6_scope_id = ifindex;
+
 
     // multidiffuse la grille initiale
+    char buf[100];
+    sprintf(buf, "grille initiale");
+    int s = sendto(sock_multi, buf, strlen(buf), 0, (struct sockaddr*)&gradr, sizeof(gradr));
+    if (s < 0)
+        perror("erreur send\n");
+
 
     return NULL;
 }
