@@ -86,12 +86,12 @@ void *serve(void *arg) { // mettre des limites d'attente sur les recv
         mess->CODEREQ_ID_EQ = htons((13<<j->id)|9);
         mess->PORTUDP = htons(a.partie4v4->port);
         mess->PORTMDIFF = htons(a.partie4v4->port_multi);
-        //inet_pton(AF_INET6, a.partie4v4->addr_multi, &mess.ADRMDIFF ); // C'est OK ?
+        inet_pton(AF_INET6, a.partie4v4->addr_multi, mess->ADRMDIFF ); // C'est OK ?
     } else { // partie2v2
         mess->CODEREQ_ID_EQ = htons((15<<(j->id)%2)|(13<<j->id)|10);
         mess->PORTUDP = htons(a.partie2v2->port);
         mess->PORTMDIFF = htons(a.partie2v2->port_multi);
-        //inet_pton(AF_INET6, a.partie2v2->addr_multi, &mess.ADRMDIFF ); // C'est OK ?
+        inet_pton(AF_INET6, a.partie2v2->addr_multi, mess->ADRMDIFF ); // C'est OK ?
 
     }
 
