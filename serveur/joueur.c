@@ -83,21 +83,24 @@ void *serve(void *arg) { // mettre des limites d'attente sur les recv
     memset(mess, 0, sizeof(message_debut_serveur));
 
     if (codereq==1) { // partie 4v4
-        mess->CODEREQ_ID_EQ = htons((13<<j->id)|9);
+        // mess->CODEREQ_ID_EQ = htons((13<<j->id)|9); // sens à vérifier
+        mess->CODEREQ_ID_EQ = htons((j->id)<<13|9);
         mess->PORTUDP = htons(a.partie4v4->port);
         mess->PORTMDIFF = htons(a.partie4v4->port_multi);
         //inet_pton(AF_INET6, a.partie4v4->addr_multi, &mess.ADRMDIFF ); // C'est OK ?
     } else { // partie2v2
-        mess->CODEREQ_ID_EQ = htons((15<<(j->id)%2)|(13<<j->id)|10);
+        mess->CODEREQ_ID_EQ = htons((15<<(j->id)%2)|(13<<j->id)|10); //ici j'ai pas touché au sens du décalage de btis
         mess->PORTUDP = htons(a.partie2v2->port);
         mess->PORTMDIFF = htons(a.partie2v2->port_multi);
         //inet_pton(AF_INET6, a.partie2v2->addr_multi, &mess.ADRMDIFF ); // C'est OK ?
 
     }
 
-        //  printf("codereq_id : %u \n",mess->CODEREQ_ID_EQ);
-        //  printf("portmdiff : %u \n",mess->PORTMDIFF);
-        //  printf("portupd : %u \n",mess->PORTUDP);
+        //  printf("codereq_id : %u \n",j->id);
+        //  printf("portmdiff : %u \n",a.partie4v4->port_multi);
+        //  printf("portupd : %u \n",a.partie4v4->port);
+        //  printf("id : %u\n",j->id);
+
 
     char* serialized_msg = malloc(BUF_SIZE*sizeof(char));
     memcpy(serialized_msg,(char*)mess,sizeof(message_debut_serveur));
@@ -135,10 +138,10 @@ void *serve(void *arg) { // mettre des limites d'attente sur les recv
     // vérifier les infos du message reçu
     // codereq
     uint16_t v = ntohs(mess_client->CODEREQ_IQ_EQ);
-
+  
     uint16_t codereq2 = v & 0b1111111111111;
     printf ("codereq2 = %d\n",codereq2);
-    if (codereq2 != codereq+2) {
+    if (codereq2 != codereq+2) {       
         printf("erreur valeur codereq dans message pret\n");
         close(sock);
         free(arg);

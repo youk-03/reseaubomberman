@@ -29,9 +29,8 @@ int join_req(message_debut_client* msg_client, int mode) { //1 si solo, 2 si éq
   return 0;
 }
 
-//mode est un peu redondant, je le remplacerai plus tard avec un |
 int ready_req(message_debut_client* msg_client, int mode, int id, int team) {
-  msg_client->CODEREQ_IQ_EQ = htons((team<<15) | (id<<13) | (mode+2));
+  msg_client->CODEREQ_IQ_EQ = htons((team<<15) | (id<<13) | (mode));
   return 0;
 }
 
@@ -125,7 +124,6 @@ int send_req() {
       return 1;
     }
 
-    //printf("le client a reçu de la part du serveur : %s \n", bufrcv);
 
     //conversion du string en struct
     message_debut_serveur * serv_msg = malloc(sizeof(message_debut_serveur));
@@ -138,10 +136,31 @@ int send_req() {
 
     memset(serv_msg, 0, sizeof(message_debut_serveur));
     memcpy(serv_msg,serialized_serv_msg,sizeof(message_debut_serveur));
+
+    //todo: rajouter if équipes 
+
     //c'est à partir de serv_msg qu'on récupère les données envoyées par le serveur
-        //  printf("codereq_id : %u \n",serv_msg->CODEREQ_ID_EQ);
-        //  printf("portmdiff : %u \n",serv_msg->PORTMDIFF);
-        //  printf("portupd : %u \n",serv_msg->PORTUDP);
+        //  printf("codereq_id : %u \n",ntohs(serv_msg->CODEREQ_ID_EQ));  => garder ces valeurs quelque part
+        //  printf("portmdiff : %u \n",ntohs(serv_msg->PORTMDIFF));
+        //  printf("portupd : %u \n",ntohs(serv_msg->PORTUDP)); 
+
+        //  //printf("eq %u\n",ntohs(serv_msg->CODEREQ_ID_EQ)>>15 & 0b1); //? 
+        //  printf("id %u\n",ntohs(serv_msg->CODEREQ_ID_EQ)>>13 & 0b11);
+        //  printf("codereq %u\n",ntohs(serv_msg->CODEREQ_ID_EQ) & 0b11111111111111);
+         mode=ntohs(serv_msg->CODEREQ_ID_EQ) & 0b1111111111111; 
+         if (mode==9) {
+          mode=3;
+         } else if (mode==10) {
+          mode=4;
+         } else {
+          perror("erreur réception codereq"); //todo: améliorer gestion d'erreur
+         }
+         id=ntohs(serv_msg->CODEREQ_ID_EQ)>>13 & 0b11;
+         if (id<0 || id>3) {
+          perror ("erreur réception id");
+         }
+         //todo: s'assurer que les valeurs sont ok 
+        
 
     
     //là, on suppose que le client a reçu l'adresse de multidiffusion
@@ -169,7 +188,7 @@ int send_req() {
     memset(&addr_rcv_udp, 0, sizeof(addr_rcv_udp));
     addr_rcv_udp.sin6_family = AF_INET6;
     addr_rcv_udp.sin6_addr = in6addr_any;
-    addr_rcv_udp.sin6_port = htons(11111); // à changer, dépend de la valeur envoyée par le serveur 
+    addr_rcv_udp.sin6_port = htons(ntohs(serv_msg->PORTUDP)); // port udp envoyé par le serveur
     socklen_t adrsize = sizeof(addr_rcv_udp);
 
     if(bind(sock_udp,(struct sockaddr*)&addr_rcv_udp,sizeof(addr_rcv_udp))) {
@@ -204,20 +223,19 @@ int send_req() {
 
     //remplissage de la struct avec les données obtenues
     memset(start_msg, 0, sizeof(message_debut_client));
-    ready_req(start_msg,mode,id,team);
 
     //conversion de la struct en string
     char* serialized_ready_msg = malloc(BUF_SIZE*sizeof(char));
 
-     if (start_msg == NULL) {
+     if (serialized_ready_msg == NULL) {
       perror("erreur de malloc");
       close(sock_tcp);
       close(sock_udp);
       return 1 ;
     }
-
-    memcpy(serialized_ready_msg,(char*)start_msg,sizeof(start_msg)); //
-
+    ready_req(start_msg,mode,id,team);
+    memcpy(serialized_ready_msg,start_msg,sizeof(start_msg)); //
+    
     s = 0;
     while (s < sizeof(serialized_ready_msg)) {
       int sent = send(sock_tcp, serialized_ready_msg + s, sizeof(serialized_ready_msg) - s, 0);
