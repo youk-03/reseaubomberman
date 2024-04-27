@@ -40,7 +40,7 @@ int send_req() {
   int mode = 1;
   int id = 3;
   int team = 2;
-  
+
     /*Initialisations pour les communications en TCP*/
 
     int sock_tcp = socket(PF_INET6, SOCK_STREAM, 0);
@@ -88,7 +88,7 @@ int send_req() {
       return 1 ;
     }
 
-    memcpy(serialized_msg,(char*)start_msg,sizeof(start_msg)); //
+    memcpy(serialized_msg,start_msg,sizeof(&start_msg)); //
     //todo: récuperer l'input de l'utilisateur
 
     
@@ -234,7 +234,7 @@ int send_req() {
       return 1 ;
     }
     ready_req(start_msg,mode,id,team);
-    memcpy(serialized_ready_msg,start_msg,sizeof(start_msg)); //
+    memcpy(serialized_ready_msg,start_msg,sizeof(&start_msg)); // 
     
     s = 0;
     while (s < sizeof(serialized_ready_msg)) {
