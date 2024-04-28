@@ -156,25 +156,25 @@ void free_bomb(bomb * b){
 bool bomb_explode(bomb* bomb, board *board, bomblist *list){//true si character meurt
     pos *p = bomb->bpos;
     bool res= false;
-    //x+1
-    if(get_grid(board,p->x+1,p->y) != WALL){
+    //x+2 reminder footstep size 2
+    if(get_grid(board,p->x+2,p->y) != WALL){
         //delete
-        if(get_grid(board,p->x+1,p->y) == CHARACTER) res = true;
-        if(get_grid(board,p->x+1,p->y) != BWALL){
+        if(get_grid(board,p->x+2,p->y) == CHARACTER) res = true;
+        if(get_grid(board,p->x+2,p->y) != BWALL && get_grid(board,p->x+2,p->y) != WALL ){
             //continu casser niveau 2
-            if(get_grid(board,p->x+2,p->y) != WALL){
-                if(get_grid(board,p->x+2,p->y) == CHARACTER) res = true;
-                set_grid(board,p->x+2,p->y, EMPTY);//niveau 2
+            if(get_grid(board,p->x+4,p->y) != WALL){
+                if(get_grid(board,p->x+4,p->y) == CHARACTER) res = true;
+                set_grid(board,p->x+4,p->y, EMPTY);//niveau 2
             }
         }
-        set_grid(board,p->x+1,p->y, EMPTY);//niveau 1
+        set_grid(board,p->x+2,p->y, EMPTY);//niveau 1
     }
 
     //y+1
     if(get_grid(board,p->x,p->y+1) != WALL){
         //delete
         if(get_grid(board,p->x,p->y+1) == CHARACTER) res = true;
-        if(get_grid(board,p->x,p->y+1) != BWALL){
+        if(get_grid(board,p->x,p->y+1) != BWALL && get_grid(board,p->x,p->y+1) != WALL){
             //continu casser niveau 2
             if(get_grid(board,p->x,p->y+2) != WALL){
                 if(get_grid(board,p->x,p->y+2) == CHARACTER) res = true;
@@ -184,57 +184,57 @@ bool bomb_explode(bomb* bomb, board *board, bomblist *list){//true si character 
         set_grid(board,p->x,p->y+1, EMPTY);//niveau 1
     }
 
-    //x-1
-    if(get_grid(board,p->x-1,p->y) != WALL){
+    //x-2 reminder footstep size 2
+    if(get_grid(board,p->x-2,p->y) != WALL){
         //delete
-        if(get_grid(board,p->x-1,p->y) == CHARACTER) res = true;
-        if(get_grid(board,p->x-1,p->y) != BWALL){
+        if(get_grid(board,p->x-2,p->y) == CHARACTER) res = true;
+        if(get_grid(board,p->x-2,p->y) != BWALL && get_grid(board,p->x-2,p->y) != WALL){
             //continu casser niveau 2
-            if(get_grid(board,p->x-2,p->y) != WALL){
-                if(get_grid(board,p->x-2,p->y) == CHARACTER) res = true;
-                set_grid(board,p->x-2,p->y, EMPTY);//niveau 2
+            if(get_grid(board,p->x-4,p->y) != WALL){
+                if(get_grid(board,p->x-4,p->y) == CHARACTER) res = true;
+                set_grid(board,p->x-4,p->y, EMPTY);//niveau 2
             }
         }
-        set_grid(board,p->x-1,p->y, EMPTY);//niveau 1
+        set_grid(board,p->x-2,p->y, EMPTY);//niveau 1
     }
 
     //y-1
     if(get_grid(board,p->x,p->y-1) != WALL){
         //delete
         if(get_grid(board,p->x,p->y-1) == CHARACTER) res = true;
-        if(get_grid(board,p->x,p->y-1) != BWALL){
+        if(get_grid(board,p->x,p->y-1) != BWALL && get_grid(board,p->x,p->y-1) != WALL){
             //continu casser niveau 2
             if(get_grid(board,p->x,p->y-2) != WALL){
                 if(get_grid(board,p->x,p->y-2) == CHARACTER) res = true;
                 set_grid(board,p->x,p->y-2, EMPTY);//niveau 2
             }
         }
-        set_grid(board,p->x,p->y+1, EMPTY);//niveau 1
+        set_grid(board,p->x,p->y-1, EMPTY);//niveau 1
     }
 
-    //x+1 y-1
-    if(get_grid(board,p->x+1,p->y-1) != WALL){
+    //x+2 y-1 reminder footstep size 2
+    if(get_grid(board,p->x+2,p->y-1) != WALL){
         //delete
-        if(get_grid(board,p->x+1,p->y-1) == CHARACTER) res = true;
-        set_grid(board,p->x+1,p->y-1, EMPTY);//niveau 1
+        if(get_grid(board,p->x+2,p->y-1) == CHARACTER) res = true;
+        set_grid(board,p->x+2,p->y-1, EMPTY);//niveau 1
     }
-    //x+1 y+1
-    if(get_grid(board,p->x+1,p->y+1) != WALL){
+    //x+2 y+1
+    if(get_grid(board,p->x+2,p->y+1) != WALL){
         //delete
-        if(get_grid(board,p->x+1,p->y+1) == CHARACTER) res = true;
-        set_grid(board,p->x+1,p->y+1, EMPTY);//niveau 1
+        if(get_grid(board,p->x+2,p->y+1) == CHARACTER) res = true;
+        set_grid(board,p->x+2,p->y+1, EMPTY);//niveau 1
     }
-    //x-1 y-1
-    if(get_grid(board,p->x-1,p->y-1) != WALL){
+    //x-2 y-1
+    if(get_grid(board,p->x-2,p->y-1) != WALL){
         //delete
-        if(get_grid(board,p->x-1,p->y-1) == CHARACTER) res = true;
-        set_grid(board,p->x-1,p->y-1, EMPTY);//niveau 1
+        if(get_grid(board,p->x-2,p->y-1) == CHARACTER) res = true;
+        set_grid(board,p->x-2,p->y-1, EMPTY);//niveau 1
     }
-    //x-1 y+1
-    if(get_grid(board,p->x-1,p->y+1) != WALL){
+    //x-2 y+1
+    if(get_grid(board,p->x-2,p->y+1) != WALL){
         //delete
-        if(get_grid(board,p->x-1,p->y+1) == CHARACTER) res = true;
-        set_grid(board,p->x-1,p->y+1, EMPTY);//niveau 1
+        if(get_grid(board,p->x-2,p->y+1) == CHARACTER) res = true;
+        set_grid(board,p->x-2,p->y+1, EMPTY);//niveau 1
     }
 
     set_grid(board, bomb->bpos->x, bomb->bpos->y, EMPTY); //retire la bombe plateau
@@ -287,6 +287,7 @@ void setup_board(board* board) {
     int lines; int columns;
     getmaxyx(stdscr,lines,columns);
     board->h = lines - 2 - 1; // 2 rows reserved for border, 1 row for chat
+    printf("lines : %d, column: %d\n",lines,columns);
     board->w = columns - 2; // 2 columns reserved for border
     board->grid = calloc((board->w)*(board->h),sizeof(char));
     maze1(board);
@@ -411,7 +412,7 @@ bool perform_action(board* b, pos* p, ACTION a,bomblist *list) {
     int prevy = p->y;
     switch (a) {
         case LEFT:
-            xd = -2; yd = 0; break;
+            xd = -2; yd = 0; break; //footsteps of size 2 for more fluidity !!!
         case RIGHT:
             xd = 2; yd = 0; break;
         case UP:
