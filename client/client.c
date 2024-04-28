@@ -40,7 +40,7 @@ int send_req() {
   int mode = 1;
   int id = 3;
   int team = 2;
-  
+
     /*Initialisations pour les communications en TCP*/
 
     int sock_tcp = socket(PF_INET6, SOCK_STREAM, 0);
@@ -88,7 +88,7 @@ int send_req() {
       return 1 ;
     }
 
-    memcpy(serialized_msg,(char*)start_msg,sizeof(start_msg)); //
+    memcpy(serialized_msg,start_msg,sizeof(&start_msg)); //
     //todo: récuperer l'input de l'utilisateur
 
     
@@ -116,14 +116,16 @@ int send_req() {
       return 1 ;
     }
 
-
-    int recu = recv(sock_tcp, serialized_serv_msg, sizeof(serialized_serv_msg), 0);
-    if (recu < 0){
+    int recu=0;
+    while (recu<sizeof(message_debut_client)){
+    int r = recv(sock_tcp, serialized_serv_msg+recu, sizeof(message_debut_serveur), 0);
+    if (r < 0){
       perror("erreur reception donnees initiales (client)");
       close(sock_tcp);
       return 1;
     }
-
+    recu+=r;
+    }
 
     //conversion du string en struct
     message_debut_serveur * serv_msg = malloc(sizeof(message_debut_serveur));
@@ -143,6 +145,15 @@ int send_req() {
         //  printf("codereq_id : %u \n",ntohs(serv_msg->CODEREQ_ID_EQ));  => garder ces valeurs quelque part
         //  printf("portmdiff : %u \n",ntohs(serv_msg->PORTMDIFF));
         //  printf("portupd : %u \n",ntohs(serv_msg->PORTUDP)); 
+        struct in6_addr adrmdiff_convert;
+
+        memset(&adrmdiff_convert,0,sizeof(struct in6_addr));
+        memcpy(&adrmdiff_convert,serv_msg->ADRMDIFF,8*sizeof(uint16_t));
+        char adrmdiff_string[INET6_ADDRSTRLEN];
+
+        inet_ntop(AF_INET6,&adrmdiff_convert,adrmdiff_string,INET6_ADDRSTRLEN);
+          
+        printf("adresse de multidiffusion : %s \n",adrmdiff_string);
 
         //  //printf("eq %u\n",ntohs(serv_msg->CODEREQ_ID_EQ)>>15 & 0b1); //? 
         //  printf("id %u\n",ntohs(serv_msg->CODEREQ_ID_EQ)>>13 & 0b11);
@@ -206,7 +217,7 @@ int send_req() {
     // abonnement à l'adresse de multidiffusion
 
     struct ipv6_mreq group ;
-    if(inet_pton(AF_INET6,"ff12::1:2:2",&group.ipv6mr_multiaddr.s6_addr)<1){ // à changer, dépend des données envoyées par le serveur
+    if(inet_pton(AF_INET6,adrmdiff_string,&group.ipv6mr_multiaddr.s6_addr)<1){ //dépend des données envoyées par le serveur
       perror("erreur conversion adresse");
       close(sock_tcp);
       close(sock_udp);
@@ -234,7 +245,7 @@ int send_req() {
       return 1 ;
     }
     ready_req(start_msg,mode,id,team);
-    memcpy(serialized_ready_msg,start_msg,sizeof(start_msg)); //
+    memcpy(serialized_ready_msg,start_msg,sizeof(&start_msg)); // 
     
     s = 0;
     while (s < sizeof(serialized_ready_msg)) {
@@ -265,5 +276,5 @@ int send_req() {
 
 int main(int argc, char *argv[]) {
   int i = send_req();
-  return 0;
+  return i;
 }

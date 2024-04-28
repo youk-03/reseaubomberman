@@ -33,6 +33,10 @@ joueur * ajoute_joueur(partie * p, int sock){ // Peut-être bouger dans un autre
 partie * nouvelle_partie(int equipes){
     partie * p = malloc(sizeof(partie));
     memset(p, 0, sizeof(partie));
+    p->addr_multi=malloc(sizeof(char)*60); //todo: penser à free
+    if (p->addr_multi == NULL) {
+        perror("erreur de malloc");
+    }
     p->port = port_nb;
     port_nb ++;
     p->port_multi = port_nb;
@@ -40,7 +44,8 @@ partie * nouvelle_partie(int equipes){
     port_nb++;
     char str[50];
     sprintf(str, "FF12:ABCD:1234:%d:AAAA:BBBB:CCCC:DDDD",addr_nb++ );
-    p->addr_multi = str;
+    //p->addr_multi = str;
+    memcpy(p->addr_multi,str,sizeof(str));
     return p;
 }
 

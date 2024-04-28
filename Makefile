@@ -1,5 +1,5 @@
 CC=gcc
-CFLAGS=-DMAC 
+CFLAGS=-DMAC -Wall 
 DEPS= format_messages.h serveur/joueur.h serveur/partie.h
 EXEC=serveur/serveur client/client
 
