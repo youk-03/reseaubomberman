@@ -200,7 +200,7 @@ int send_req() {
     addr_rcv_udp.sin6_family = AF_INET6;
     addr_rcv_udp.sin6_addr = in6addr_any;
     addr_rcv_udp.sin6_port = htons(ntohs(serv_msg->PORTUDP)); // port udp envoyé par le serveur
-    socklen_t adrsize = sizeof(addr_rcv_udp);
+    //socklen_t adrsize = sizeof(addr_rcv_udp);
 
     if(bind(sock_udp,(struct sockaddr*)&addr_rcv_udp,sizeof(addr_rcv_udp))) {
       perror("erreur de bind");
@@ -260,6 +260,24 @@ int send_req() {
     }
 
     puts("send ready effectue (cli)");
+
+    // lecture de multidiffusion
+
+    char buf[BUF_SIZE];
+    memset(buf, 0, sizeof(buf));
+
+    struct sockaddr_in6 diffadr;
+    int multicast_recu;
+    socklen_t difflen = sizeof(diffadr);
+
+    memset(buf, 0, sizeof(buf));
+    if ((multicast_recu = recvfrom(sock_udp, buf, sizeof(buf)-1, 0, (struct sockaddr *)&diffadr, &difflen)) < 0){
+      perror("erreur de recvfrom");
+      return -1;
+    }
+    printf("reçu en multidiffusion  : %s\n", buf);
+
+
 
 
     free(serv_msg);
