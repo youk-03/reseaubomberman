@@ -87,7 +87,10 @@ void *serve(void *arg) { // mettre des limites d'attente sur les recv
         mess->CODEREQ_ID_EQ = htons((j->id)<<13|9);
         mess->PORTUDP = htons(a.partie4v4->port);
         mess->PORTMDIFF = htons(a.partie4v4->port_multi);
-        inet_pton(AF_INET6, a.partie4v4->addr_multi, mess->ADRMDIFF ); // C'est OK ?
+        if (inet_pton(AF_INET6, a.partie4v4->addr_multi, mess->ADRMDIFF )!=1){
+            perror("erreur inet_pton");
+        }; // C'est OK ? -> c'est OK !
+
     } else { // partie2v2
         mess->CODEREQ_ID_EQ = htons((15<<(j->id)%2)|(13<<j->id)|10); //ici j'ai pas touché au sens du décalage de btis
         mess->PORTUDP = htons(a.partie2v2->port);
@@ -102,14 +105,15 @@ void *serve(void *arg) { // mettre des limites d'attente sur les recv
         //  printf("id : %u\n",j->id);
 
 
-    char* serialized_msg = malloc(BUF_SIZE*sizeof(char));
-    memcpy(serialized_msg,(char*)mess,sizeof(message_debut_serveur));
+    // char* serialized_msg = malloc(BUF_SIZE*sizeof(char));
+    char* serialized_msg = malloc(sizeof(message_debut_serveur));
+    memset(serialized_msg, 0, sizeof(message_debut_serveur));
+    memcpy(serialized_msg, mess,sizeof(message_debut_serveur));
 
     int ecrit = 0;  
-    while (ecrit<sizeof(serialized_msg)){
-        ecrit += send(sock, serialized_msg + ecrit, sizeof(serialized_msg)-ecrit, 0); // ??? -> on cast la struct en char* et on envoie le char* du résultat
-    }
-    printf("envoye\n");
+    while (ecrit<sizeof(message_debut_serveur)){
+        ecrit += send(sock, serialized_msg + ecrit, sizeof(message_debut_serveur)-ecrit, 0); // ??? -> on cast la struct en char* et on envoie le char* du résultat
+    }   
     free(mess);
     // attendre le message "prêt" du joueur
 
