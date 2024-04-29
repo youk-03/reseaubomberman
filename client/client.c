@@ -10,7 +10,7 @@
 #include "../format_messages.h"
 
 #define PORT_TCP  1024
-#define ADDR_TCP  "fdc7:9dd5:2c66:be86:7e57:58ff:fe68:b249"  // "::1" //à changer
+#define ADDR_TCP  "::1" //"fdc7:9dd5:2c66:be86:7e57:58ff:fe68:b249"  // "::1" //à changer
 #define BUF_SIZE 256
 
 
