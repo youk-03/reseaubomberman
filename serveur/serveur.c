@@ -65,6 +65,24 @@ int main(int argc, char *argv[]){
     partie * p2v2 = nouvelle_partie(1);
 
     while(1){
+        /*printf("Partie prête : %d \n", partie_prete(* p4v4));
+        if (partie_prete(* p4v4)){
+            // lancer thread partie
+            pthread_t thread_partie; // TODO : sauvegarder les threads de parties
+            if(pthread_create(&thread_partie, NULL, serve_partie, p4v4)){
+                perror("pthread_create : nouvelle partie");
+                continue;
+            }
+            
+            // mettre une nouvelle partie dans p4v4
+            p4v4 = nouvelle_partie(0);
+        }
+        if (partie_prete(* p2v2)){
+            // same
+        }*/
+        // TODO : enregistrer les threads de parties lancés
+
+
         // accepte un client
         struct sockaddr_in6 addrclient;
         socklen_t size=sizeof(addrclient);
@@ -86,23 +104,6 @@ int main(int argc, char *argv[]){
             char nom_dst[INET6_ADDRSTRLEN];
             printf("client connecte : %s %d\n", inet_ntop(AF_INET6,&addrclient.sin6_addr,nom_dst,sizeof(nom_dst)), htons(addrclient.sin6_port));
         }
-
-        printf("Partie prête : %d \n", partie_prete(* p4v4));
-        if (partie_prete(* p4v4)){
-            // lancer thread partie
-            pthread_t thread_partie; // TODO : sauvegarder les threads de parties
-            if(pthread_create(&thread_partie, NULL, serve_partie, p4v4)){
-                perror("pthread_create : nouvelle partie");
-                continue;
-            }
-            
-            // mettre une nouvelle partie dans p4v4
-            p4v4 = nouvelle_partie(0);
-        }
-        if (partie_prete(* p2v2)){
-            // same
-        }
-        // TODO : enregistrer les threads de parties lancés
 
     }
 

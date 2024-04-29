@@ -26,8 +26,19 @@ joueur * ajoute_joueur(partie * p, int sock){ // Peut-être bouger dans un autre
             return j;
         }
     }
+
+    // ALors, j'ai fait ça pour régler le problème du 5ème joueur mais je suis pas trop sure que ça soit la bonne solution
+    p = nouvelle_partie(p->equipes);
+    joueur * j = nouveau_joueur(sock, 0);
+    p->joueurs[0] = j;
+    printf("Joueur ajouté à la partie \n");
     pthread_mutex_unlock(&verrou_partie);
-    return NULL;
+
+    pthread_t thread_partie; // TODO : sauvegarder les threads de parties
+    if(pthread_create(&thread_partie, NULL, serve_partie, p)){
+        perror("pthread_create : nouvelle partie");
+    }
+    return j;
 }
 
 partie * nouvelle_partie(int equipes){
@@ -51,6 +62,7 @@ partie * nouvelle_partie(int equipes){
 
 int partie_prete(partie p){
     for (int i=0; i<4; i++){
+
         if (p.joueurs[i]==NULL) {
             return 0;
         }
@@ -81,7 +93,7 @@ void *serve_partie(void * arg) { // fonction pour le thread de partie
     sprintf(buf, "grille initiale");
     int s = sendto(sock_multi, buf, strlen(buf), 0, (struct sockaddr*)&gradr, sizeof(gradr));
     if (s < 0)
-        perror("erreur send\n");
+        perror("erreur send !!!");
 
 
     // déroulement de la partie
