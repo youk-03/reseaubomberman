@@ -21,8 +21,8 @@ joueur * nouveau_joueur(int sock, int i){
 }
 
 void *serve(void *arg) { // mettre des limites d'attente sur les recv
-    arg_serve a = *((arg_serve *)arg);
-    int sock = a.sock;
+    arg_serve * a = ((arg_serve * )arg);
+    int sock = a->sock;
   
   // ** recevoir premier message : type de partie **
 
@@ -56,18 +56,17 @@ void *serve(void *arg) { // mettre des limites d'attente sur les recv
     joueur * j;
     if (codereq==1) {
         // ajoute le joueur à une partie 4v4
-        j = NULL;
-        while (j==NULL){
 
-
-        j = ajoute_joueur(a.partie4v4, sock);
+        j = ajoute_joueur(a->partie4v4, sock);
         if (j==NULL){
             printf("Erreur le joueur n'a pas pu être ajouté\n");
-        }
+            close(sock);
+            free(arg);
+            return NULL;
         }
     } else if (codereq==2){
         // ajoute le joueur à une partie2v2
-        j = ajoute_joueur(a.partie2v2, sock);
+        j = ajoute_joueur(a->partie2v2, sock);
         if (j==NULL){
             printf("Erreur le joueur n'a pas pu être ajouté\n");
             close(sock);
@@ -87,17 +86,17 @@ void *serve(void *arg) { // mettre des limites d'attente sur les recv
     if (codereq==1) { // partie 4v4
         // mess->CODEREQ_ID_EQ = htons((13<<j->id)|9); // sens à vérifier
         mess->CODEREQ_ID_EQ = htons((j->id)<<13|9);
-        mess->PORTUDP = htons(a.partie4v4->port);
-        mess->PORTMDIFF = htons(a.partie4v4->port_multi);
-        if (inet_pton(AF_INET6, a.partie4v4->addr_multi, mess->ADRMDIFF )!=1){
+        mess->PORTUDP = htons(a->partie4v4->port);
+        mess->PORTMDIFF = htons(a->partie4v4->port_multi);
+        if (inet_pton(AF_INET6, a->partie4v4->addr_multi, mess->ADRMDIFF )!=1){
             perror("erreur inet_pton");
         }; // C'est OK ? -> c'est OK !
 
     } else { // partie2v2
         mess->CODEREQ_ID_EQ = htons((15<<(j->id)%2)|(13<<j->id)|10); //ici j'ai pas touché au sens du décalage de btis
-        mess->PORTUDP = htons(a.partie2v2->port);
-        mess->PORTMDIFF = htons(a.partie2v2->port_multi);
-        inet_pton(AF_INET6, a.partie2v2->addr_multi, mess->ADRMDIFF ); // C'est OK ?
+        mess->PORTUDP = htons(a->partie2v2->port);
+        mess->PORTMDIFF = htons(a->partie2v2->port_multi);
+        inet_pton(AF_INET6, a->partie2v2->addr_multi, mess->ADRMDIFF ); // C'est OK ?
 
     }
 

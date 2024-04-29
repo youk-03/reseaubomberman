@@ -210,7 +210,7 @@ int send_req() {
     }
 
 
-    int ifindex = if_nametoindex ("eth0"); //en0 pour mac eth0 sinon
+    int ifindex = if_nametoindex ("en0"); //en0 pour mac eth0 sinon
     if(ifindex == 0)
       perror("if_nametoindex");
 
