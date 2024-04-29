@@ -12,7 +12,7 @@
 
 pthread_mutex_t verrou = PTHREAD_MUTEX_INITIALIZER; // utiliser pour ajouter des joueurs à une partie
 
-static int port_nb = 24000;
+static int port_nb = 2424;
 static int addr_nb = 1;
 
 joueur * ajoute_joueur(partie * p, int sock){ // Peut-être bouger dans un autre fichier
