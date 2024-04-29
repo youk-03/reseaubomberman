@@ -63,9 +63,6 @@ void *serve(void *arg) { // mettre des limites d'attente sur les recv
         j = ajoute_joueur(a.partie4v4, sock);
         if (j==NULL){
             printf("Erreur le joueur n'a pas pu être ajouté\n");
-            close(sock);
-            free(arg);
-            return NULL;
         }
         }
     } else if (codereq==2){
