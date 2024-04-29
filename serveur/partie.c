@@ -10,23 +10,23 @@
 #include "../format_messages.h"
 #include "partie.h"
 
-pthread_mutex_t verrou = PTHREAD_MUTEX_INITIALIZER; // utiliser pour ajouter des joueurs à une partie
+pthread_mutex_t verrou_partie = PTHREAD_MUTEX_INITIALIZER; // utiliser pour ajouter des joueurs à une partie
 
 static int port_nb = 24000;
 static int addr_nb = 1;
 
 joueur * ajoute_joueur(partie * p, int sock){ // Peut-être bouger dans un autre fichier
-    pthread_mutex_lock(&verrou);
+    pthread_mutex_lock(&verrou_partie);
     for (int i=0; i<4; i++){
         if (p->joueurs[i]==NULL){
             joueur * j = nouveau_joueur(sock, i);
             p->joueurs[i] = j;
             printf("Joueur ajouté à la partie \n");
-            pthread_mutex_unlock(&verrou);
+            pthread_mutex_unlock(&verrou_partie);
             return j;
         }
     }
-    pthread_mutex_unlock(&verrou);
+    pthread_mutex_unlock(&verrou_partie);
     return NULL;
 }
 
@@ -51,8 +51,12 @@ partie * nouvelle_partie(int equipes){
 
 int partie_prete(partie p){
     for (int i=0; i<4; i++){
-        if (p.joueurs[i]==NULL) return 0;
-        if (!p.joueurs[i]->pret) return 0;
+        if (p.joueurs[i]==NULL) {
+            return 0;
+        }
+        if (!p.joueurs[i]->pret) {
+            return 0;
+        }
     }
     return 1;
 }
