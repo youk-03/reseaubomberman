@@ -49,12 +49,13 @@ partie * nouvelle_partie(int equipes){
         perror("erreur de malloc");
     }
     p->port = port_nb;
-    port_nb ++;
+    port_nb ++; // -> à retirer si on veut tester la multidiffusion
     p->port_multi = port_nb;
     p->equipes = equipes;
-    port_nb++;
+    port_nb++;  // -> à retirer si on veut tester la multidiffusion
     char str[50];
-    sprintf(str, "FF12:ABCD:1234:%d:AAAA:BBBB:CCCC:DDDD",addr_nb++ );
+    sprintf(str, "FF12:ABCD:1234:%d:AAAA:BBBB:CCCC:DDDD",addr_nb++ ); // -> remplacer par la ligne d'en dessous pour tester multidiffusion
+    //sprintf(str, "FF12:ABCD:1234:%d:AAAA:BBBB:CCCC:DDDD",addr_nb);
     //p->addr_multi = str;
     memcpy(p->addr_multi,str,sizeof(str));
     return p;

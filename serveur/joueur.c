@@ -64,7 +64,7 @@ void *serve(void *arg) { // mettre des limites d'attente sur les recv
             free(arg);
             return NULL;
         }
-    } else if (codereq==2){
+    } else if (codereq==2){       
         // ajoute le joueur à une partie2v2
         j = ajoute_joueur(a->partie2v2, sock);
         if (j==NULL){
@@ -93,7 +93,7 @@ void *serve(void *arg) { // mettre des limites d'attente sur les recv
         }; // C'est OK ? -> c'est OK !
 
     } else { // partie2v2
-        mess->CODEREQ_ID_EQ = htons((15<<(j->id)%2)|(13<<j->id)|10); //ici j'ai pas touché au sens du décalage de btis
+        mess->CODEREQ_ID_EQ = htons(((j->id)%2)<<15|(j->id<<13)|10); //j'ai finalement touché au sens du décalage de bits
         mess->PORTUDP = htons(a->partie2v2->port);
         mess->PORTMDIFF = htons(a->partie2v2->port_multi);
         inet_pton(AF_INET6, a->partie2v2->addr_multi, mess->ADRMDIFF ); // C'est OK ?
