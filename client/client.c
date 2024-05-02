@@ -14,15 +14,11 @@
 #define BUF_SIZE 256
 
 
-// peut-être pas
-// int join_req(message_debut_client* msg_client, int mode) {// à bouger vers un autre fichier
-//     msg_client->CODEREQ=htons(mode);
-// }
-
-// int ready_req(message_debut_client* msg_client, int team_id, int player_id) {
-//   msg_client->EQ=htons(team_id);
-//   msg_client->ID=htons(player_id);
-// }
+typedef struct info_joueur {
+    int mode ;
+    int id ;
+    int team ; 
+} info_joueur ;
 
 int join_req(message_debut_client* msg_client, int mode) { //1 si solo, 2 si équipes,à bouger vers un autre fichier
   msg_client->CODEREQ_IQ_EQ = htons(mode);
@@ -33,6 +29,21 @@ int ready_req(message_debut_client* msg_client, int mode, int id, int team) {
   msg_client->CODEREQ_IQ_EQ = htons((team<<15) | (id<<13) | (mode));
   return 0;
 }
+
+int string_to_struct(message_debut_serveur * serv_msg, char * serialized_serv_msg) {
+       
+  memset(serv_msg, 0, sizeof(message_debut_serveur));
+  memcpy(serv_msg,serialized_serv_msg,sizeof(message_debut_serveur));
+  return 0 ; 
+}
+
+int struct_to_string(message_debut_client * msg_cli, char * buf, int mode) {
+  memset(msg_cli, 0, sizeof(message_debut_client));
+  join_req(msg_cli,mode);
+  memcpy(buf,msg_cli,sizeof(&msg_cli)); 
+  return 0;
+}
+
 
 
 int send_req(int mode_input) {
@@ -77,8 +88,6 @@ int send_req(int mode_input) {
       close(sock_tcp);
       return 1 ;
     }
-    memset(start_msg, 0, sizeof(message_debut_client));
-    join_req(start_msg,mode);
 
     char* serialized_msg = malloc(BUF_SIZE*sizeof(char));
 
@@ -88,6 +97,8 @@ int send_req(int mode_input) {
       return 1 ;
     }
 
+    memset(start_msg, 0, sizeof(message_debut_client));
+    join_req(start_msg,mode);
     memcpy(serialized_msg,start_msg,sizeof(&start_msg)); //
     //todo: récuperer l'input de l'utilisateur
 
@@ -136,15 +147,14 @@ int send_req(int mode_input) {
       return 1 ;
     }
 
-    memset(serv_msg, 0, sizeof(message_debut_serveur));
-    memcpy(serv_msg,serialized_serv_msg,sizeof(message_debut_serveur));
+    string_to_struct(serv_msg,serialized_serv_msg);
 
     //todo: rajouter if équipes 
 
     //c'est à partir de serv_msg qu'on récupère les données envoyées par le serveur
-        //  printf("codereq_id : %u \n",ntohs(serv_msg->CODEREQ_ID_EQ));  => garder ces valeurs quelque part
-        //  printf("portmdiff : %u \n",ntohs(serv_msg->PORTMDIFF));
-        //  printf("portupd : %u \n",ntohs(serv_msg->PORTUDP)); 
+          //  printf("codereq_id : %u \n",ntohs(serv_msg->CODEREQ_ID_EQ));  => garder ces valeurs quelque part
+          //  printf("portmdiff : %u \n",ntohs(serv_msg->PORTMDIFF));
+          //  printf("portupd : %u \n",ntohs(serv_msg->PORTUDP)); 
         struct in6_addr adrmdiff_convert;
 
         memset(&adrmdiff_convert,0,sizeof(struct in6_addr));
