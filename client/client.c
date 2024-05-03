@@ -7,50 +7,23 @@
 #include <string.h>
 #include <unistd.h>
 #include <pthread.h>
-#include "../format_messages.h"
+#include "auxiliaire.h"
 
 #define PORT_TCP  1024
-#define ADDR_TCP  "::1" //"fdc7:9dd5:2c66:be86:7e57:58ff:fe68:b249"  // "::1" //à changer
+#define ADDR_TCP  "::1" //"fdc7:9dd5:2c66:be86:7e57:58ff:fe68:b249" //à changer
 #define BUF_SIZE 256
-
-
-typedef struct info_joueur {
-    int mode ;
-    int id ;
-    int team ; 
-} info_joueur ;
-
-int join_req(message_debut_client* msg_client, int mode) { //1 si solo, 2 si équipes,à bouger vers un autre fichier
-  msg_client->CODEREQ_IQ_EQ = htons(mode);
-  return 0;
-}
-
-int ready_req(message_debut_client* msg_client, int mode, int id, int team) {
-  msg_client->CODEREQ_IQ_EQ = htons((team<<15) | (id<<13) | (mode));
-  return 0;
-}
-
-int string_to_struct(message_debut_serveur * serv_msg, char * serialized_serv_msg) {
-       
-  memset(serv_msg, 0, sizeof(message_debut_serveur));
-  memcpy(serv_msg,serialized_serv_msg,sizeof(message_debut_serveur));
-  return 0 ; 
-}
-
-int struct_to_string(message_debut_client * msg_cli, char * buf, int mode) {
-  memset(msg_cli, 0, sizeof(message_debut_client));
-  join_req(msg_cli,mode);
-  memcpy(buf,msg_cli,sizeof(&msg_cli)); 
-  return 0;
-}
-
 
 
 int send_req(int mode_input) {
 
-  int mode = mode_input;
-  int id = 3;
-  int team = 2;
+  info_joueur * info_joueur = malloc(sizeof(info_joueur));
+
+  if (info_joueur == NULL) {
+    perror("erreur de malloc");
+    return 1 ;
+  }
+
+  info_joueur->mode=mode_input;
 
     /*Initialisations pour les communications en TCP*/
 
@@ -79,8 +52,6 @@ int send_req(int mode_input) {
 
     /*envoi de la première "requête" */
 
-    //todo: remplacer par un select/poll éventuellement
-
     message_debut_client * start_msg = malloc(sizeof(message_debut_client)); 
 
     if (start_msg == NULL) {
@@ -97,13 +68,13 @@ int send_req(int mode_input) {
       return 1 ;
     }
 
-    memset(start_msg, 0, sizeof(message_debut_client));
-    join_req(start_msg,mode);
-    memcpy(serialized_msg,start_msg,sizeof(&start_msg)); //
-    //todo: récuperer l'input de l'utilisateur
+    // memset(start_msg, 0, sizeof(message_debut_client));
+    // join_req(start_msg,mode);
+    // memcpy(serialized_msg,start_msg,sizeof(&start_msg)); //
+ 
 
-    
-    //on passe le mode (pour tester: solo/1) dans la struct
+    struct_to_string(start_msg,serialized_msg,info_joueur->mode);
+
     
     int s = 0;
   
@@ -152,41 +123,33 @@ int send_req(int mode_input) {
     //todo: rajouter if équipes 
 
     //c'est à partir de serv_msg qu'on récupère les données envoyées par le serveur
-          //  printf("codereq_id : %u \n",ntohs(serv_msg->CODEREQ_ID_EQ));  => garder ces valeurs quelque part
-          //  printf("portmdiff : %u \n",ntohs(serv_msg->PORTMDIFF));
-          //  printf("portupd : %u \n",ntohs(serv_msg->PORTUDP)); 
-        struct in6_addr adrmdiff_convert;
 
-        memset(&adrmdiff_convert,0,sizeof(struct in6_addr));
-        memcpy(&adrmdiff_convert,serv_msg->ADRMDIFF,8*sizeof(uint16_t));
+            // printf("codereq_id : %u \n",ntohs(serv_msg->CODEREQ_ID_EQ));
+            // printf("portmdiff : %u \n",ntohs(serv_msg->PORTMDIFF));
+            // printf("portupd : %u \n",ntohs(serv_msg->PORTUDP));
+
+        struct in6_addr * adrmdiff_convert= malloc(sizeof(struct in6_addr));
+        if (adrmdiff_convert == NULL) {
+          perror("erreur de malloc");
+          close(sock_tcp);
+          return 1; 
+        }
+
+        set_addrdiff(adrmdiff_convert,serv_msg);
+
         char adrmdiff_string[INET6_ADDRSTRLEN];
-
-        inet_ntop(AF_INET6,&adrmdiff_convert,adrmdiff_string,INET6_ADDRSTRLEN);
+        inet_ntop(AF_INET6,adrmdiff_convert,adrmdiff_string,INET6_ADDRSTRLEN);
           
         printf("adresse de multidiffusion : %s \n",adrmdiff_string);
 
         //  //printf("eq %u\n",ntohs(serv_msg->CODEREQ_ID_EQ)>>15 & 0b1); //? 
         //  printf("id %u\n",ntohs(serv_msg->CODEREQ_ID_EQ)>>13 & 0b11);
         //  printf("codereq %u\n",ntohs(serv_msg->CODEREQ_ID_EQ) & 0b11111111111111);
-         mode=ntohs(serv_msg->CODEREQ_ID_EQ) & 0b1111111111111; 
-         if (mode==9) {
-          mode=3;
-         } else if (mode==10) {
-          mode=4;
-         } else {
-          perror("erreur réception codereq"); //todo: améliorer gestion d'erreur
+         if (info_check(info_joueur,serv_msg) != 0 ) {
+          close(sock_tcp);
+          return 1;
          }
-         id=ntohs(serv_msg->CODEREQ_ID_EQ)>>13 & 0b11;
-         if (id<0 || id>3) {
-          perror ("erreur réception id");
-         }
-         //todo: s'assurer que les valeurs sont ok 
-        
-
-    
-    //là, on suppose que le client a reçu l'adresse de multidiffusion
-
-
+      
     /*Initialisations pour les communications en UDP*/
 
     int sock_udp;
@@ -254,7 +217,8 @@ int send_req(int mode_input) {
       close(sock_udp);
       return 1 ;
     }
-    ready_req(start_msg,mode,id,team);
+
+    ready_req(start_msg,info_joueur);
     memcpy(serialized_ready_msg,start_msg,sizeof(&start_msg)); // 
     
     s = 0;
@@ -269,7 +233,7 @@ int send_req(int mode_input) {
       s += sent;
     }
 
-    puts("send ready effectue (cli)");
+    puts("send ready effectue (client)");
 
     // lecture de multidiffusion
 
@@ -286,7 +250,6 @@ int send_req(int mode_input) {
       return -1;
     }
     printf("reçu en multidiffusion  : %s\n", buf);
-
 
 
 
