@@ -87,56 +87,56 @@ void maj_grid (full_grid_msg *msg, board *b){
     }
 }
 
-int main (int argc, char* argv[]){
-    //test udp ipv6
-    int sock = socket(PF_INET6, SOCK_DGRAM, 0);
-    if(sock < 0){
-        perror("erreur socket: ");
-        return -1;
-    }
+// int main (int argc, char* argv[]){
+//     //test udp ipv6
+//     int sock = socket(PF_INET6, SOCK_DGRAM, 0);
+//     if(sock < 0){
+//         perror("erreur socket: ");
+//         return -1;
+//     }
 
-    struct sockaddr_in6 servadr;
-    memset(&servadr, 0, sizeof(servadr));
-    servadr.sin6_family = AF_INET6;
-    inet_pton(AF_INET6, "::1", &servadr.sin6_addr); //addr en arg svp
-    servadr.sin6_port = htons(2525);
-    socklen_t len = sizeof(servadr);
+//     struct sockaddr_in6 servadr;
+//     memset(&servadr, 0, sizeof(servadr));
+//     servadr.sin6_family = AF_INET6;
+//     inet_pton(AF_INET6, "::1", &servadr.sin6_addr); //addr en arg svp
+//     servadr.sin6_port = htons(2525);
+//     socklen_t len = sizeof(servadr);
 
-    //envoie du message
-    board* b = malloc(sizeof(board));;
-    setup_board(b);
-    full_grid_msg *req =full_grid_req(b, 5);
-    char *buffer = malloc(sizeof(full_grid_msg)+1);
-    memcpy(buffer,req,sizeof(full_grid_msg));
+//     //envoie du message
+//     board* b = malloc(sizeof(board));;
+//     setup_board(b);
+//     full_grid_msg *req =full_grid_req(b, 5);
+//     char *buffer = malloc(sizeof(full_grid_msg)+1);
+//     memcpy(buffer,req,sizeof(full_grid_msg));
 
-    for(int i=0; i<sizeof(full_grid_msg); i++){
-        printf("%02x", buffer[i]);
-    }
+//     for(int i=0; i<sizeof(full_grid_msg); i++){
+//         printf("%02x", buffer[i]);
+//     }
 
-    //tester une fonc pour print la grid ?
+//     //tester une fonc pour print la grid ?
 
-    //refresh_game(b, NULL);
-
-
-    // modified_cases_msg *req =modified_grid_req(3,0x5);
-    // char *buffer = malloc(sizeof(modified_cases_msg)+1);
-    // memcpy(buffer,req,sizeof(modified_cases_msg));
-
-    // for(int i=0; i<sizeof(modified_cases_msg); i++){
-    //     printf("%02x", buffer[i]);
-    // }
-
-    // printf("\n");
-    // printf("%u, %u num %u l'autre", ntohs(req->NUM), ntohs(req->CODEREQ_ID_EQ));
+//     //refresh_game(b, NULL);
 
 
+//     // modified_cases_msg *req =modified_grid_req(3,0x5);
+//     // char *buffer = malloc(sizeof(modified_cases_msg)+1);
+//     // memcpy(buffer,req,sizeof(modified_cases_msg));
 
-    int env = sendto(sock, buffer, sizeof(full_grid_msg), 0, (struct sockaddr *)&servadr, len);
-    if(env < 0){
-        perror("echec sendto");
-        return -2;
-    }
+//     // for(int i=0; i<sizeof(modified_cases_msg); i++){
+//     //     printf("%02x", buffer[i]);
+//     // }
+
+//     // printf("\n");
+//     // printf("%u, %u num %u l'autre", ntohs(req->NUM), ntohs(req->CODEREQ_ID_EQ));
 
 
-    return 0;
-}
+
+//     int env = sendto(sock, buffer, sizeof(full_grid_msg), 0, (struct sockaddr *)&servadr, len);
+//     if(env < 0){
+//         perror("echec sendto");
+//         return -2;
+//     }
+
+
+//     return 0;
+// }
