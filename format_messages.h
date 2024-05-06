@@ -16,8 +16,18 @@ typedef struct message_debut_client {
 
 /*  déroulement de la partie */
 
+typedef struct message_partie_client {
+    uint16_t CODEREQ_ID_EQ;
+    uint16_t NUM_ACTION;
+} message_partie_client;
+
 
 /* le tchat */
+
+typedef struct message_tchat_client {
+    uint16_t CODEREQ_ID_EQ;
+    uint16_t LEN_DATA [8]; // pas sûre du type 
+} message_tchat_client;
 
 
 

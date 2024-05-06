@@ -100,9 +100,9 @@ void *serve(void *arg) { // mettre des limites d'attente sur les recv
 
     }
 
-        //  printf("codereq_id : %u \n",j->id);
-        //  printf("portmdiff : %u \n",a.partie4v4->port_multi);
-        //  printf("portupd : %u \n",a.partie4v4->port);
+        //  printf("codereq_id : %u \n",ntohs(mess->CODEREQ_ID_EQ));
+        //  printf("portmdiff : %u \n",a->partie4v4->port_multi);
+        //  printf("portupd : %u \n",a->partie4v4->port);
         //  printf("id : %u\n",j->id);
 
 
@@ -116,6 +116,7 @@ void *serve(void *arg) { // mettre des limites d'attente sur les recv
         ecrit += send(sock, serialized_msg + ecrit, sizeof(message_debut_serveur)-ecrit, 0); // ??? -> on cast la struct en char* et on envoie le char* du résultat
     }   
     free(mess);
+
     // attendre le message "prêt" du joueur
 
    // Je sais pas si ça marche, à tester avec le client ------------ normalement ça marche, on croise les doigts 
