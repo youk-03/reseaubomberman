@@ -10,24 +10,35 @@
 #include "../format_messages.h"
 #include "partie.h"
 
-pthread_mutex_t verrou = PTHREAD_MUTEX_INITIALIZER; // utiliser pour ajouter des joueurs à une partie
+pthread_mutex_t verrou_partie = PTHREAD_MUTEX_INITIALIZER; // utiliser pour ajouter des joueurs à une partie
 
 static int port_nb = 24000;
 static int addr_nb = 1;
 
 joueur * ajoute_joueur(partie * p, int sock){ // Peut-être bouger dans un autre fichier
-    pthread_mutex_lock(&verrou);
+    pthread_mutex_lock(&verrou_partie);
     for (int i=0; i<4; i++){
         if (p->joueurs[i]==NULL){
             joueur * j = nouveau_joueur(sock, i);
             p->joueurs[i] = j;
             printf("Joueur ajouté à la partie \n");
-            pthread_mutex_unlock(&verrou);
+            pthread_mutex_unlock(&verrou_partie);
             return j;
         }
     }
-    pthread_mutex_unlock(&verrou);
-    return NULL;
+
+    // ALors, j'ai fait ça pour régler le problème du 5ème joueur mais je suis pas trop sure que ça soit la bonne solution
+    p = nouvelle_partie(p->equipes);
+    joueur * j = nouveau_joueur(sock, 0);
+    p->joueurs[0] = j;
+    printf("Joueur ajouté à la partie \n");
+    pthread_mutex_unlock(&verrou_partie);
+
+    pthread_t thread_partie; // TODO : sauvegarder les threads de parties
+    if(pthread_create(&thread_partie, NULL, serve_partie, p)){
+        perror("pthread_create : nouvelle partie");
+    }
+    return j;
 }
 
 partie * nouvelle_partie(int equipes){
@@ -38,12 +49,13 @@ partie * nouvelle_partie(int equipes){
         perror("erreur de malloc");
     }
     p->port = port_nb;
-    port_nb ++;
+    port_nb ++; // -> à retirer si on veut tester la multidiffusion
     p->port_multi = port_nb;
     p->equipes = equipes;
-    port_nb++;
+    port_nb++;  // -> à retirer si on veut tester la multidiffusion
     char str[50];
-    sprintf(str, "FF12:ABCD:1234:%d:AAAA:BBBB:CCCC:DDDD",addr_nb++ );
+    sprintf(str, "FF12:ABCD:1234:%d:AAAA:BBBB:CCCC:DDDD",addr_nb++ ); // -> remplacer par la ligne d'en dessous pour tester multidiffusion
+    //sprintf(str, "FF12:ABCD:1234:%d:AAAA:BBBB:CCCC:DDDD",addr_nb);
     //p->addr_multi = str;
     memcpy(p->addr_multi,str,sizeof(str));
     return p;
@@ -51,8 +63,13 @@ partie * nouvelle_partie(int equipes){
 
 int partie_prete(partie p){
     for (int i=0; i<4; i++){
-        if (p.joueurs[i]==NULL) return 0;
-        if (!p.joueurs[i]->pret) return 0;
+
+        if (p.joueurs[i]==NULL) {
+            return 0;
+        }
+        if (!p.joueurs[i]->pret) {
+            return 0;
+        }
     }
     return 1;
 }
@@ -77,7 +94,7 @@ void *serve_partie(void * arg) { // fonction pour le thread de partie
     sprintf(buf, "grille initiale");
     int s = sendto(sock_multi, buf, strlen(buf), 0, (struct sockaddr*)&gradr, sizeof(gradr));
     if (s < 0)
-        perror("erreur send\n");
+        perror("erreur send !!!");
 
 
     // déroulement de la partie
