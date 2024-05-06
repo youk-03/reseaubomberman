@@ -2,6 +2,10 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+#ifndef FORMAT_MESSAGES__H
+#define FORMAT_MESSAGES__H
+
+
 
 /***  Messages du client ***/
 
@@ -43,21 +47,20 @@ typedef struct message_debut_serveur {
 /* déroulement d'une partie */
 
     /* Grille complète*/
-typedef struct message_grille_complete {
+typedef struct full_grid_msg {
     uint16_t CODEREQ_ID_EQ; // big endian
     uint16_t NUM; // big endian
-    uint8_t HAUTEUR;
-    uint8_t LARGEUR;
-    uint8_t CASE[10]; // Modifier avec la taille du plateau
-} message_grille_complete;
+    uint16_t HAUTEUR_LARGEUR;
+    uint8_t CASE[1275]; // not sure it's the case for every size of screen else it needs to be done in a different way or smaller GRID_SIZE
+} full_grid_msg;
 
     /* Cases modifiées */
-typedef struct message_cases_modifiees{
+typedef struct modified_cases_msg{
     uint16_t CODEREQ_ID_EQ; // big endian
     uint16_t NUM; // big endian
     uint8_t NB;
-    uint CASES; // les cases transmises, je suis pas sûre du type
-} message_cases_modifiees;
+    //uint CASES; // les cases transmises, je suis pas sûre du type
+} modified_cases_msg;
 
 
 /* le tchat */
@@ -73,3 +76,5 @@ typedef struct message_tchat_serveur{
 typedef struct message_fin_serveur{
     uint16_t CODEREQ_ID_EQ; // big endian
 } message_fin_serveur;
+
+#endif
