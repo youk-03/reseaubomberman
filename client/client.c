@@ -172,7 +172,7 @@ int send_req(int mode_input) {
     memset(&addr_rcv_udp, 0, sizeof(addr_rcv_udp));
     addr_rcv_udp.sin6_family = AF_INET6;
     addr_rcv_udp.sin6_addr = in6addr_any;
-    addr_rcv_udp.sin6_port = htons(ntohs(serv_msg->PORTUDP)); // port udp envoyé par le serveur
+    addr_rcv_udp.sin6_port = htons(ntohs(serv_msg->PORTUDP)); // port udp envoyé par le serveur // en mettant PORTMDIFF ça marche mais il faut créer une autre socket
     //socklen_t adrsize = sizeof(addr_rcv_udp);
 
     if(bind(sock_udp,(struct sockaddr*)&addr_rcv_udp,sizeof(addr_rcv_udp))) {

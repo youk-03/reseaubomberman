@@ -23,7 +23,7 @@ joueur * ajoute_joueur(partie * p, int sock){ // Peut-être bouger dans un autre
             p->joueurs[i] = j;
             printf("Joueur ajouté à la partie \n");
             pthread_mutex_unlock(&verrou_partie);
-            return j;
+            return j; //TODO : lancer la partie si elle est remplie ici plutôt
         }
     }
     pthread_mutex_unlock(&verrou_partie);
