@@ -26,18 +26,19 @@ joueur * ajoute_joueur(partie * p, int sock){ // Peut-être bouger dans un autre
             return j;
         }
     }
+    pthread_mutex_unlock(&verrou_partie);
 
-    // ALors, j'ai fait ça pour régler le problème du 5ème joueur mais je suis pas trop sure que ça soit la bonne solution
+    pthread_t thread_partie; // TODO : sauvegarder les threads de parties   !!!!!!! ça me semble pas être le bon endroit pour faire ça
+    if(pthread_create(&thread_partie, NULL, serve_partie, p)){
+        perror("pthread_create : nouvelle partie");
+    }
+
+    pthread_mutex_lock(&verrou_partie);
     p = nouvelle_partie(p->equipes);
     joueur * j = nouveau_joueur(sock, 0);
     p->joueurs[0] = j;
     printf("Joueur ajouté à la partie \n");
     pthread_mutex_unlock(&verrou_partie);
-
-    pthread_t thread_partie; // TODO : sauvegarder les threads de parties
-    if(pthread_create(&thread_partie, NULL, serve_partie, p)){
-        perror("pthread_create : nouvelle partie");
-    }
     return j;
 }
 
@@ -81,6 +82,7 @@ void *serve_partie(void * arg) { // fonction pour le thread de partie
     struct sockaddr_in6 gradr;
     memset(&gradr, 0, sizeof(gradr));
     gradr.sin6_family = AF_INET6;
+    printf("adresse avant multidiffusion : %s\n", p.addr_multi);
     inet_pton(AF_INET6, p.addr_multi, &gradr.sin6_addr);
     gradr.sin6_port = htons(p.port_multi);
 
