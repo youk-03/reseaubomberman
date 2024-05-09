@@ -22,16 +22,19 @@ joueur * ajoute_joueur(partie * p, int sock){ // Peut-être bouger dans un autre
             joueur * j = nouveau_joueur(sock, i);
             p->joueurs[i] = j;
             printf("Joueur ajouté à la partie \n");
+
+            if (partie_remplie(*p)){
+                printf("Lancement partie \n");
+                pthread_t thread_partie;
+                if(pthread_create(&thread_partie, NULL, serve_partie, p)){
+                    perror("pthread_create : nouvelle partie");
+                }
+            }
             pthread_mutex_unlock(&verrou_partie);
             return j; //TODO : lancer la partie si elle est remplie ici plutôt
         }
     }
     pthread_mutex_unlock(&verrou_partie);
-
-    pthread_t thread_partie; // TODO : sauvegarder les threads de parties   !!!!!!! ça me semble pas être le bon endroit pour faire ça
-    if(pthread_create(&thread_partie, NULL, serve_partie, p)){
-        perror("pthread_create : nouvelle partie");
-    }
 
     pthread_mutex_lock(&verrou_partie);
     p = nouvelle_partie(p->equipes);
@@ -75,8 +78,24 @@ int partie_prete(partie p){
     return 1;
 }
 
+int partie_remplie(partie p){
+    for (int i=0; i<4; i++){
+
+        if (p.joueurs[i]==NULL) {
+            return 0;
+        }
+    }
+    return 1;
+}
+
 void *serve_partie(void * arg) { // fonction pour le thread de partie
+
+
+
     partie p = *(partie *)arg;
+
+    while(!partie_prete(p)){
+    }
     
     int  sock_multi = socket(AF_INET6, SOCK_DGRAM, 0);
     struct sockaddr_in6 gradr;

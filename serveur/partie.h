@@ -25,6 +25,8 @@ partie * nouvelle_partie(int);
 
 int partie_prete(partie);
 
+int partie_remplie(partie);
+
 
 void *serve_partie(void *);
 
