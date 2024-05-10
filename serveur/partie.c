@@ -15,7 +15,8 @@ pthread_mutex_t verrou_partie = PTHREAD_MUTEX_INITIALIZER; // utiliser pour ajou
 static int port_nb = 24000;
 static int addr_nb = 1;
 
-joueur * ajoute_joueur(partie * p, int sock){ // Peut-être bouger dans un autre fichier
+joueur * ajoute_joueur(partie ** pp, int sock){ // Peut-être bouger dans un autre fichier
+    partie * p = * pp;
     pthread_mutex_lock(&verrou_partie);
     for (int i=0; i<4; i++){
         if (p->joueurs[i]==NULL){
@@ -38,6 +39,7 @@ joueur * ajoute_joueur(partie * p, int sock){ // Peut-être bouger dans un autre
 
     pthread_mutex_lock(&verrou_partie);  // TODO : vérifier que le pointeur se mette bien à jour
     p = nouvelle_partie(p->equipes);
+    * pp = p;
     joueur * j = nouveau_joueur(sock, 0);
     p->joueurs[0] = j;
     printf("Joueur ajouté à la partie \n");
@@ -97,9 +99,11 @@ void *serve_partie(void * arg) { // fonction pour le thread de partie
     while(!partie_prete(p)){
     }
 
-    // peut-être faire un thread pour le tchat
+    // ici, thread pour le tchat
+
+    // socket multidiffusion
     
-    int  sock_multi = socket(AF_INET6, SOCK_DGRAM, 0);
+    int  sock_multi = socket(PF_INET6, SOCK_DGRAM, 0);
     struct sockaddr_in6 gradr;
     memset(&gradr, 0, sizeof(gradr));
     gradr.sin6_family = AF_INET6;
@@ -109,6 +113,22 @@ void *serve_partie(void * arg) { // fonction pour le thread de partie
 
     int ifindex = if_nametoindex ("eth0");
     gradr.sin6_scope_id = ifindex;
+
+    // socket udp (pour recevoir les messages des clients)
+
+    int sock_udp = socket(PF_INET6, SOCK_DGRAM, 0);
+    struct sockaddr_in6 adrudp;
+    memset(&adrudp, 0, sizeof(gradr));
+    adrudp.sin6_family = AF_INET6;
+    adrudp.sin6_addr = in6addr_any;
+    adrudp.sin6_port = htons(p.port);
+    if (bind(sock_udp, (struct sockaddr *)&adrudp, sizeof(adrudp))<0){
+        perror("bind");
+        free(arg);
+        close(sock_multi);
+        return NULL;
+    }
+
 
 
     // multidiffuse la grille initiale

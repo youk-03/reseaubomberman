@@ -13,13 +13,13 @@ typedef struct partie {
 
 
 typedef struct arg_serve{
-    partie * partie4v4; // les parties qui ont encore de la place -> ajouter partie2v2
-    partie * partie2v2;
+    partie ** partie4v4; // les parties qui ont encore de la place -> ajouter partie2v2
+    partie ** partie2v2;
     int sock;
 } arg_serve;
 
 
-joueur * ajoute_joueur(partie *, int);
+joueur * ajoute_joueur(partie **, int);
 
 partie * nouvelle_partie(int);
 

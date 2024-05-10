@@ -89,17 +89,19 @@ void *serve(void *arg) { // mettre des limites d'attente sur les recv
     if (codereq==1) { // partie 4v4
         // mess->CODEREQ_ID_EQ = htons((13<<j->id)|9); // sens à vérifier
         mess->CODEREQ_ID_EQ = htons((j->id)<<13|9);
-        mess->PORTUDP = htons(a->partie4v4->port);
-        mess->PORTMDIFF = htons(a->partie4v4->port_multi);
-        if (inet_pton(AF_INET6, a->partie4v4->addr_multi, mess->ADRMDIFF )!=1){
+        partie * p4v4 = * (a->partie4v4);
+        mess->PORTUDP = htons(p4v4->port);
+        mess->PORTMDIFF = htons(p4v4->port_multi);
+        if (inet_pton(AF_INET6, p4v4->addr_multi, mess->ADRMDIFF )!=1){
             perror("erreur inet_pton");
         }; // C'est OK ? -> c'est OK !
 
     } else { // partie2v2
         mess->CODEREQ_ID_EQ = htons(((j->id)%2)<<15|(j->id<<13)|10); //j'ai finalement touché au sens du décalage de bits
-        mess->PORTUDP = htons(a->partie2v2->port);
-        mess->PORTMDIFF = htons(a->partie2v2->port_multi);
-        inet_pton(AF_INET6, a->partie2v2->addr_multi, mess->ADRMDIFF ); // C'est OK ?
+        partie * p2v2 = * (a->partie2v2);
+        mess->PORTUDP = htons(p2v2->port);
+        mess->PORTMDIFF = htons(p2v2->port_multi);
+        inet_pton(AF_INET6, p2v2->addr_multi, mess->ADRMDIFF ); // C'est OK ?
 
     }
 

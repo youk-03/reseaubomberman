@@ -91,8 +91,8 @@ int main(int argc, char *argv[]){
 
         if (sock_client >= 0) {
             arg_serve * arg = malloc(sizeof(arg_serve));
-            arg->partie4v4 = p4v4;
-            arg->partie2v2 = p2v2;
+            arg->partie4v4 = &p4v4; // malloc ?
+            arg->partie2v2 = &p2v2;
             arg->sock = sock_client;
 
             pthread_t thread;
