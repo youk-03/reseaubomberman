@@ -61,6 +61,7 @@ void *serve(void *arg) { // mettre des limites d'attente sur les recv
         if (j==NULL){
             printf("Erreur le joueur n'a pas pu être ajouté\n");
             close(sock);
+            free(mess_client);
             free(arg);
             return NULL;
         }
@@ -70,6 +71,7 @@ void *serve(void *arg) { // mettre des limites d'attente sur les recv
         if (j==NULL){
             printf("Erreur le joueur n'a pas pu être ajouté\n");
             close(sock);
+            free(mess_client);
             free(arg);
             return NULL;
         }
@@ -77,6 +79,7 @@ void *serve(void *arg) { // mettre des limites d'attente sur les recv
         printf("Valeur de codereq incorrecte\n");
         close(sock);
         free(arg);
+        free(mess_client);
         return NULL;
     }
    // Remplissage de la struct
@@ -116,6 +119,7 @@ void *serve(void *arg) { // mettre des limites d'attente sur les recv
         ecrit += send(sock, serialized_msg + ecrit, sizeof(message_debut_serveur)-ecrit, 0); // ??? -> on cast la struct en char* et on envoie le char* du résultat
     }   
     free(mess);
+    free(serialized_msg);
 
     // attendre le message "prêt" du joueur
 
@@ -131,9 +135,7 @@ void *serve(void *arg) { // mettre des limites d'attente sur les recv
             perror("recv");
             close(sock);
             free(arg);
-            int *ret = malloc(sizeof(int));
-            *ret = 1;
-            pthread_exit(ret);
+            return NULL;
         }
         recu += r;
     }
@@ -144,6 +146,8 @@ void *serve(void *arg) { // mettre des limites d'attente sur les recv
     // vérifier les infos du message reçu
     // codereq
     uint16_t v = ntohs(mess_client->CODEREQ_IQ_EQ);
+
+    free(mess_client);
   
     uint16_t codereq2 = v & 0b1111111111111;
     printf ("codereq2 = %d\n",codereq2);
@@ -176,11 +180,7 @@ void *serve(void *arg) { // mettre des limites d'attente sur les recv
 
     
     // tchat et signalement fin de partie en TCP
-
-
-
-
-    close(sock); // a enlever peut-être un jour
+    // je pense pas qu'on va faire ça ici
     free(arg);
     return NULL;
 }

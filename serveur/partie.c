@@ -36,7 +36,7 @@ joueur * ajoute_joueur(partie * p, int sock){ // Peut-être bouger dans un autre
     }
     pthread_mutex_unlock(&verrou_partie);
 
-    pthread_mutex_lock(&verrou_partie);
+    pthread_mutex_lock(&verrou_partie);  // TODO : vérifier que le pointeur se mette bien à jour
     p = nouvelle_partie(p->equipes);
     joueur * j = nouveau_joueur(sock, 0);
     p->joueurs[0] = j;
@@ -96,6 +96,8 @@ void *serve_partie(void * arg) { // fonction pour le thread de partie
 
     while(!partie_prete(p)){
     }
+
+    // peut-être faire un thread pour le tchat
     
     int  sock_multi = socket(AF_INET6, SOCK_DGRAM, 0);
     struct sockaddr_in6 gradr;

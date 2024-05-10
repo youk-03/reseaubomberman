@@ -10,7 +10,7 @@
 #include "auxiliaire.h"
 
 #define PORT_TCP  1024
-#define ADDR  "::1" //"fdc7:9dd5:2c66:be86:7e57:58ff:fe68:b249" //à changer
+#define ADDR  "::1" //"fdc7:9dd5:2c66:be86:7e57:58ff:fe68:b249" // c'est l'adresse du serveur
 #define BUF_SIZE 256
 
 

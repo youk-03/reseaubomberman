@@ -4,7 +4,7 @@
 #define BUF_SIZE 256
 
 typedef struct joueur{
-    int sock;
+    int sock; // TCP
     int id; // entre 0 et 3
     int pret;
 } joueur;

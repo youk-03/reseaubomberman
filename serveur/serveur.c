@@ -61,8 +61,8 @@ int main(int argc, char *argv[]){
     }
     /* TODO : créer une partie vide puis et faire en sorte qu'on envoie 
     le pointeur vers les parties à compléter dans serve */
-    partie * p4v4 = nouvelle_partie(0);
-    partie * p2v2 = nouvelle_partie(1);
+    partie * p4v4 = nouvelle_partie(0); // free fin de la partie
+    partie * p2v2 = nouvelle_partie(1); // free 
 
     while(1){
         /*printf("Partie prête : %d \n", partie_prete(* p4v4));
@@ -87,7 +87,7 @@ int main(int argc, char *argv[]){
         struct sockaddr_in6 addrclient;
         socklen_t size=sizeof(addrclient);
     
-        int sock_client = accept(sock, (struct sockaddr *) &addrclient, &size);
+        int sock_client = accept(sock, (struct sockaddr *) &addrclient, &size); // close fin de la partie
 
         if (sock_client >= 0) {
             arg_serve * arg = malloc(sizeof(arg_serve));
