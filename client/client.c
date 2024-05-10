@@ -279,4 +279,19 @@ int main(int argc, char *argv[]) {
 
   int i = send_req(atoi(argv[1]));
   return i;
+
+  //rajouter le jeux, la grille avec le board toussa toussa et faire en sorte que quand le 
+  //client essaye de se deplacer au lieu de changer la grille ça envoie une requête
+  //au serveur
+  //récupérer les grille multidiffusé, maj la grille du client et afficher
+
+  //le client stock qui il est normalement ? (id joueur)
+
+
+
+  /* pour le serveur :
+  le serveur va avoir la grille la vrai grille, il va recevoir les demande des joueurs les maj
+  puis envoyer au joueur en multidiffusion la grille modifiée et toute les secondes la grille complete
+  
+  coder les fonc qui recupere les requetes des joueurs et maj la grid avec */
 }

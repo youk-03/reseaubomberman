@@ -2,6 +2,7 @@
 #define PARTIE_H
 
 #include "joueur.h"
+#include "game/myncurses.h"
 
 typedef struct partie {
     joueur * joueurs[4]; // les équipes sont faites en fonction de la parité
@@ -9,6 +10,7 @@ typedef struct partie {
     char * addr_multi; // adresse de multidiffusion FF12:
     int port; // port pour recevoir des messages
     int equipes; // vaut 1 pour une partie en équipe et 0 sinon
+    board* board;
 } partie;
 
 

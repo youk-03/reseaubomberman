@@ -41,7 +41,7 @@ joueur * ajoute_joueur(partie * p, int sock){ // Peut-être bouger dans un autre
     return j;
 }
 
-partie * nouvelle_partie(int equipes){
+partie * nouvelle_partie(int equipes){ //ICI INITIALISER LE BOARD
     partie * p = malloc(sizeof(partie));
     memset(p, 0, sizeof(partie));
     p->addr_multi=malloc(sizeof(char)*60); //todo: penser à free
@@ -58,6 +58,14 @@ partie * nouvelle_partie(int equipes){
     //sprintf(str, "FF12:ABCD:1234:%d:AAAA:BBBB:CCCC:DDDD",addr_nb);
     //p->addr_multi = str;
     memcpy(p->addr_multi,str,sizeof(str));
+
+    p->board = malloc(sizeof(board)); //PAS ENCORE FREE POUR LE MOMENT Y PENSER
+    setup_board(p->board); //board initial
+    set_grid(p->board,1,1,CHARACTER); //joueur1
+    set_grid(p->board,p->board->w-1,1,CHARACTER2); //joueur2 verifier que les placements marchent bien 
+    set_grid(p->board,1,p->board->h-1,CHARACTER3); //joueur3
+    set_grid(p->board,p->board->w-1,p->board->h-1,CHARACTER4); //joueur4
+    // verifier que les placements marchent bien  pr tt le monde
     return p;
 }
 
@@ -76,6 +84,7 @@ int partie_prete(partie p){
 
 void *serve_partie(void * arg) { // fonction pour le thread de partie
     partie p = *(partie *)arg;
+    board *board = p.board;
     
     int  sock_multi = socket(AF_INET6, SOCK_DGRAM, 0);
     struct sockaddr_in6 gradr;
@@ -90,6 +99,10 @@ void *serve_partie(void * arg) { // fonction pour le thread de partie
 
     // multidiffuse la grille initiale
     // TODO : envoyer les bonnes valeurs
+    //juste besoin d'un board le serveur ?
+    //initialiser le board toussa toussa avec 4 joueurs cette fois un à chaque bord dans nouvelle partie
+    //struct joueur contient leurs pos
+    //struct partie contient le board
     char buf[100];
     sprintf(buf, "grille initiale");
     int s = sendto(sock_multi, buf, strlen(buf), 0, (struct sockaddr*)&gradr, sizeof(gradr));
