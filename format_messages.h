@@ -30,7 +30,7 @@ typedef struct message_partie_client {
 
 typedef struct message_tchat_client {
     uint16_t CODEREQ_ID_EQ;
-    uint16_t LEN_DATA [8]; // pas sûre du type 
+    uint16_t LEN_DATA [8]; // pas sûre du type  // Je pense pas que ce soit le bon format, mais on peut utiliser le même format pour le serveur et le client
 } message_tchat_client;
 
 
@@ -67,10 +67,10 @@ typedef struct modified_cases_msg{
 
 /* le tchat */
 
-typedef struct message_tchat_serveur{
+typedef struct message_tchat{ 
     uint16_t CODEREQ_ID_EQ; // big endian
     uint8_t LEN;
-    char * DATE; // pas sure du type
+    char * DATA; // pas sure du type
 } message_tchat_serveur;
 
 /* la fin de partie */

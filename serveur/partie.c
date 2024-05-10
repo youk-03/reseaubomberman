@@ -7,8 +7,11 @@
 #include <unistd.h>
 #include <pthread.h>
 #include <net/if.h>
+#include <poll.h>
 #include "../format_messages.h"
 #include "partie.h"
+
+#define SIZE_MESS 100
 
 pthread_mutex_t verrou_partie = PTHREAD_MUTEX_INITIALIZER; // utiliser pour ajouter des joueurs à une partie
 
@@ -91,7 +94,7 @@ int partie_remplie(partie p){
 }
 
 void *serve_partie(void * arg) { // fonction pour le thread de partie
-
+    // TODO : faire une fonction qui ferme les sockets tcp des joueurs et qui free correctement
 
 
     partie p = *(partie *)arg;
@@ -100,6 +103,13 @@ void *serve_partie(void * arg) { // fonction pour le thread de partie
     }
 
     // ici, thread pour le tchat
+
+    pthread_t thread_tchat;
+    if (pthread_create(&thread_tchat, NULL, serve_tchat, arg)) {
+	    perror("pthread_create");
+	    free(arg);
+        return NULL;
+    }  
 
     // socket multidiffusion
     
@@ -145,6 +155,62 @@ void *serve_partie(void * arg) { // fonction pour le thread de partie
     // TODO : recevoir action et agir
     // + multidiffusion de la grille régulièremement (un autre thread ?)
 
+    // à faire : fin de partie -> tout free et fermer correctement + vérifier fin du thread tchat
 
     return NULL;
+}
+
+void *serve_tchat(void * arg) {
+    printf("Début du tchat \n");
+    partie p = *(partie *)arg;
+
+    struct pollfd *pfds = malloc(sizeof(*pfds) * 4); // free
+    memset(pfds, 0, sizeof(*pfds) * 4);
+
+    for (int i=0; i<4; i++) {
+        pfds[i].fd = p.joueurs[i]->sock;
+        pfds[i].events = POLLIN;
+    }
+
+    while(1) {
+        int poll_cpt = poll(pfds, 4, 0);
+
+        if (poll_cpt == -1) {
+            perror("poll");
+            return NULL;
+        }
+
+        for (int i=0; i<4; i++){
+            if (pfds[i].revents & POLLIN) {
+                char buf[SIZE_MESS]; // TODO : utiliser le bon format
+                memset(buf, 0, SIZE_MESS);
+
+                // On reçoit
+                int recu = recv(pfds[i].fd, buf, SIZE_MESS * sizeof(char), 0);
+                if (recu < 0){
+                    perror("erreur lecture");
+                    return NULL;
+                }
+                if (recu == 0){
+                    printf("serveur off\n");
+                    return NULL;
+                }
+
+                // On envoie aux autres
+                char bufsend[SIZE_MESS+5];
+                memset(bufsend, 0, SIZE_MESS);
+                sprintf(bufsend, "J%d : %s", i, buf);
+                for (int j=0; j<4; j++){
+                    if (j!=i) {
+                        int ecrit = send(pfds[j].fd, bufsend, strlen(bufsend), 0);
+                        if(ecrit <= 0){
+                            perror("erreur ecriture tchat");
+                            return NULL;
+                        }
+                    }
+                }
+
+            }
+        }
+    }
 }
