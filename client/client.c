@@ -8,9 +8,11 @@
 #include <unistd.h>
 #include <pthread.h>
 #include "auxiliaire.h"
+#include "../game/myncurses.h"
+#include "../game/game.h"
 
 #define PORT_TCP  1024
-#define ADDR_TCP  "::1" //"fdc7:9dd5:2c66:be86:7e57:58ff:fe68:b249" //à changer
+#define ADDR  "::1" //"fdc7:9dd5:2c66:be86:7e57:58ff:fe68:b249" //à changer
 #define BUF_SIZE 256
 
 
@@ -38,7 +40,7 @@ int send_req(int mode_input) {
     memset(&address_sock_tcp, 0,sizeof(address_sock_tcp));
     address_sock_tcp.sin6_family = AF_INET6;
     address_sock_tcp.sin6_port = htons(PORT_TCP);
-    conv = inet_pton(AF_INET6, ADDR_TCP, &address_sock_tcp.sin6_addr);
+    conv = inet_pton(AF_INET6, ADDR, &address_sock_tcp.sin6_addr);
     if (conv != 1) {
       perror("erreur conversion adresse tcp");
     }
@@ -150,7 +152,7 @@ int send_req(int mode_input) {
           return 1;
          }
       
-    /*Initialisations pour les communications en UDP*/
+    /* Initialisation sock_udp */
 
     int sock_udp;
     if((sock_udp = socket(AF_INET6, SOCK_DGRAM, 0)) < 0) {
@@ -168,30 +170,58 @@ int send_req(int mode_input) {
     }
 
 
-    struct sockaddr_in6 addr_rcv_udp;
-    memset(&addr_rcv_udp, 0, sizeof(addr_rcv_udp));
-    addr_rcv_udp.sin6_family = AF_INET6;
-    addr_rcv_udp.sin6_addr = in6addr_any;
-    addr_rcv_udp.sin6_port = htons(ntohs(serv_msg->PORTUDP)); // port udp envoyé par le serveur
-    //socklen_t adrsize = sizeof(addr_rcv_udp);
+    struct sockaddr_in6 addr_udp;
+    memset(&addr_udp, 0, sizeof(addr_udp));
+    addr_udp.sin6_family = AF_INET6;
+    addr_udp.sin6_port = serv_msg->PORTUDP; // port udp envoyé par le serveur
+    inet_pton(AF_INET6, ADDR, &addr_udp);
+    //socklen_t adrsize = sizeof(addr_udp);
 
-    if(bind(sock_udp,(struct sockaddr*)&addr_rcv_udp,sizeof(addr_rcv_udp))) {
-      perror("erreur de bind");
+    /* Initialisation sock_mdiff */
+
+    int sock_mdiff;
+    if((sock_mdiff = socket(AF_INET6, SOCK_DGRAM, 0)) < 0) {
+      perror("echec de socket");
       close(sock_udp);
       close(sock_tcp);
-      return 1 ; 
+      return 1;
     }
 
+    ok = 1;
+    if(setsockopt(sock_mdiff, SOL_SOCKET, SO_REUSEADDR, &ok, sizeof(ok)) < 0) {
+      perror("echec de SO_REUSEADDR");
+      close(sock_mdiff);
+      close(sock_udp);
+      close(sock_tcp);
+      return 1;
+    }
 
-    int ifindex = if_nametoindex ("eth0"); //en0 pour mac eth0 sinon
+    struct sockaddr_in6 addr_mdiff;
+    memset(&addr_mdiff, 0, sizeof(addr_mdiff));
+    addr_mdiff.sin6_family = AF_INET6;
+    addr_mdiff.sin6_addr = in6addr_any;
+    addr_mdiff.sin6_port = serv_msg->PORTMDIFF;
+
+    if(bind(sock_mdiff, (struct sockaddr*) &addr_mdiff, sizeof(addr_mdiff))) {
+      perror("echec de bind");
+      close(sock_mdiff);
+      close(sock_udp);
+      close(sock_tcp);
+      return 1;
+    }
+
+    int ifindex = if_nametoindex ("eth0");
     if(ifindex == 0)
       perror("if_nametoindex");
+
+
 
     // abonnement à l'adresse de multidiffusion
 
     struct ipv6_mreq group ;
     if(inet_pton(AF_INET6,adrmdiff_string,&group.ipv6mr_multiaddr.s6_addr)<1){ //dépend des données envoyées par le serveur
       perror("erreur conversion adresse");
+      close(sock_mdiff);
       close(sock_tcp);
       close(sock_udp);
       return 1;
@@ -200,6 +230,7 @@ int send_req(int mode_input) {
 
     if (setsockopt(sock_udp, IPPROTO_IPV6, IPV6_JOIN_GROUP, &group, sizeof(group))<0) {
       perror ("erreur d'abonnement au groupe");
+      close(sock_mdiff);
       close(sock_udp);
       close(sock_tcp);
       return 1 ;
@@ -213,6 +244,7 @@ int send_req(int mode_input) {
 
      if (serialized_ready_msg == NULL) {
       perror("erreur de malloc");
+      close(sock_mdiff);
       close(sock_tcp);
       close(sock_udp);
       return 1 ;
@@ -226,6 +258,7 @@ int send_req(int mode_input) {
       int sent = send(sock_tcp, serialized_ready_msg + s, sizeof(serialized_ready_msg) - s, 0);
       if (sent == -1) {
         perror("erreur de send");
+        close(sock_mdiff);
         close(sock_tcp);
         close(sock_udp);
         return 1 ;
@@ -237,22 +270,33 @@ int send_req(int mode_input) {
 
     // lecture de multidiffusion
 
-    char buf[BUF_SIZE];
-    memset(buf, 0, sizeof(buf));
+    // char buf[BUF_SIZE];
+    // memset(buf, 0, sizeof(buf));
+    char *buf= malloc(sizeof(full_grid_msg)); //FREE
+    full_grid_msg *msg = malloc(sizeof(full_grid_msg)); //FREE
+
 
     struct sockaddr_in6 diffadr;
     int multicast_recu;
     socklen_t difflen = sizeof(diffadr);
 
     memset(buf, 0, sizeof(buf));
-    if ((multicast_recu = recvfrom(sock_udp, buf, sizeof(buf)-1, 0, (struct sockaddr *)&diffadr, &difflen)) < 0){
+    if ((multicast_recu = recvfrom(sock_mdiff, buf, sizeof(full_grid_msg), 0, (struct sockaddr *)&diffadr, &difflen)) < 0){
       perror("erreur de recvfrom");
       return -1;
     }
+    memcpy(msg, buf, sizeof(full_grid_msg));
     printf("reçu en multidiffusion  : %s\n", buf);
 
+    //         for(int i=0; i<sizeof(full_grid_msg); i++){
+    //     printf("%02x", buf[i]);
+    // }
 
 
+    free(buf);
+    buf=NULL;
+    free(msg);
+    msg = NULL;
     free(serv_msg);
     free(start_msg);
     free(serialized_msg);

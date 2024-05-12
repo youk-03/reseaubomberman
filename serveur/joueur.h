@@ -2,11 +2,13 @@
 #define JOUEUR_H
 
 #define BUF_SIZE 256
+#include "../game/myncurses.h"
 
 typedef struct joueur{
     int sock;
     int id; // entre 0 et 3
     int pret;
+    pos *pos;
 } joueur;
 
 joueur * nouveau_joueur(int, int);

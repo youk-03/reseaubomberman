@@ -2,7 +2,7 @@
 #define PARTIE_H
 
 #include "joueur.h"
-#include "game/myncurses.h"
+#include "../game/myncurses.h"
 
 typedef struct partie {
     joueur * joueurs[4]; // les équipes sont faites en fonction de la parité
@@ -26,6 +26,8 @@ joueur * ajoute_joueur(partie *, int);
 partie * nouvelle_partie(int);
 
 int partie_prete(partie);
+
+int partie_remplie(partie);
 
 
 void *serve_partie(void *);

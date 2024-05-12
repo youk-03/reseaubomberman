@@ -14,6 +14,10 @@
 #define BITSOF(x) (sizeof(x) * 8)
 
 
+//peut être déplacer dans joueur ?
+
+
+
 void print_uint8_t(uint8_t n) {
         int i;
         for (i = BITSOF(n); i >= 0; i--)

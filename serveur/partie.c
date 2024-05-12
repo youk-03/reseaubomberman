@@ -9,6 +9,8 @@
 #include <net/if.h>
 #include "../format_messages.h"
 #include "partie.h"
+#include "../game/myncurses.h"
+#include "../game/game.h"
 
 pthread_mutex_t verrou_partie = PTHREAD_MUTEX_INITIALIZER; // utiliser pour ajouter des joueurs à une partie
 
@@ -22,22 +24,26 @@ joueur * ajoute_joueur(partie * p, int sock){ // Peut-être bouger dans un autre
             joueur * j = nouveau_joueur(sock, i);
             p->joueurs[i] = j;
             printf("Joueur ajouté à la partie \n");
+
+            if (partie_remplie(*p)){
+                printf("Lancement partie \n");
+                pthread_t thread_partie;
+                if(pthread_create(&thread_partie, NULL, serve_partie, p)){
+                    perror("pthread_create : nouvelle partie");
+                }
+            }
             pthread_mutex_unlock(&verrou_partie);
-            return j;
+            return j; //TODO : lancer la partie si elle est remplie ici plutôt
         }
     }
+    pthread_mutex_unlock(&verrou_partie);
 
-    // ALors, j'ai fait ça pour régler le problème du 5ème joueur mais je suis pas trop sure que ça soit la bonne solution
+    pthread_mutex_lock(&verrou_partie);
     p = nouvelle_partie(p->equipes);
     joueur * j = nouveau_joueur(sock, 0);
     p->joueurs[0] = j;
     printf("Joueur ajouté à la partie \n");
     pthread_mutex_unlock(&verrou_partie);
-
-    pthread_t thread_partie; // TODO : sauvegarder les threads de parties
-    if(pthread_create(&thread_partie, NULL, serve_partie, p)){
-        perror("pthread_create : nouvelle partie");
-    }
     return j;
 }
 
@@ -61,11 +67,6 @@ partie * nouvelle_partie(int equipes){ //ICI INITIALISER LE BOARD
 
     p->board = malloc(sizeof(board)); //PAS ENCORE FREE POUR LE MOMENT Y PENSER
     setup_board(p->board); //board initial
-    set_grid(p->board,1,1,CHARACTER); //joueur1
-    set_grid(p->board,p->board->w-1,1,CHARACTER2); //joueur2 verifier que les placements marchent bien 
-    set_grid(p->board,1,p->board->h-1,CHARACTER3); //joueur3
-    set_grid(p->board,p->board->w-1,p->board->h-1,CHARACTER4); //joueur4
-    // verifier que les placements marchent bien  pr tt le monde
     return p;
 }
 
@@ -82,14 +83,31 @@ int partie_prete(partie p){
     return 1;
 }
 
+int partie_remplie(partie p){
+    for (int i=0; i<4; i++){
+
+        if (p.joueurs[i]==NULL) {
+            return 0;
+        }
+    }
+    return 1;
+}
+
 void *serve_partie(void * arg) { // fonction pour le thread de partie
+
+
+
     partie p = *(partie *)arg;
     board *board = p.board;
+
+    while(!partie_prete(p)){
+    } //attente active peut-être faire autrement 
     
     int  sock_multi = socket(AF_INET6, SOCK_DGRAM, 0);
     struct sockaddr_in6 gradr;
     memset(&gradr, 0, sizeof(gradr));
     gradr.sin6_family = AF_INET6;
+    printf("adresse avant multidiffusion : %s\n", p.addr_multi);
     inet_pton(AF_INET6, p.addr_multi, &gradr.sin6_addr);
     gradr.sin6_port = htons(p.port_multi);
 
@@ -98,16 +116,20 @@ void *serve_partie(void * arg) { // fonction pour le thread de partie
 
 
     // multidiffuse la grille initiale
-    // TODO : envoyer les bonnes valeurs
-    //juste besoin d'un board le serveur ?
-    //initialiser le board toussa toussa avec 4 joueurs cette fois un à chaque bord dans nouvelle partie
-    //struct joueur contient leurs pos
-    //struct partie contient le board
-    char buf[100];
-    sprintf(buf, "grille initiale");
-    int s = sendto(sock_multi, buf, strlen(buf), 0, (struct sockaddr*)&gradr, sizeof(gradr));
+
+    full_grid_msg *req =full_grid_req(board, 5); //--> FREE REQ
+    char *buffer = malloc(sizeof(full_grid_msg)+1); //FREE MESSAGE
+    memcpy(buffer,req,sizeof(full_grid_msg));
+
+    int s = sendto(sock_multi, buffer, sizeof(full_grid_msg), 0, (struct sockaddr*)&gradr, sizeof(gradr));
     if (s < 0)
         perror("erreur send !!!");
+
+
+    free(req);
+    req= NULL;
+    free(buffer);
+    buffer = NULL;
 
 
     // déroulement de la partie

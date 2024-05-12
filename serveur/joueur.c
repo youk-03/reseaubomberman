@@ -100,7 +100,7 @@ void *serve(void *arg) { // mettre des limites d'attente sur les recv
 
     }
 
-        //  printf("codereq_id : %u \n",ntohs(mess->CODEREQ_ID_EQ));
+        //  aprintf("codereq_id : %u \n",ntohs(mess->CODEREQ_ID_EQ));
         //  printf("portmdiff : %u \n",a->partie4v4->port_multi);
         //  printf("portupd : %u \n",a->partie4v4->port);
         //  printf("id : %u\n",j->id);
