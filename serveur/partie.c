@@ -186,7 +186,7 @@ void *serve_tchat(void * arg) {
                 memset(buf, 0, SIZE_MESS);
 
                 // On reçoit
-                message_tchat * mess = malloc(sizeof(message_tchat)); // free
+                message_tchat * mess = malloc(sizeof(message_tchat));
                 memset(mess, 0, sizeof(message_tchat));
 
                 // On reçoit les premiers champs d'abords
@@ -248,7 +248,7 @@ void *serve_tchat(void * arg) {
                 printf("message tchat : %s\n",buf_data);
 
                 int size = sizeof(message_tchat) + len;
-                char* serialized_msg = malloc(size); // free
+                char* serialized_msg = malloc(size); 
                 memset(serialized_msg, 0, sizeof(message_tchat));
                 memcpy(serialized_msg, mess,sizeof(message_tchat));
                 memcpy(serialized_msg+sizeof(message_tchat), buf_data,len );
@@ -262,10 +262,13 @@ void *serve_tchat(void * arg) {
                     if (j!=i && ((codereq!=8) || j%2==eq)) {
                         int ecrit = 0;  
                         while (ecrit<size){
-                            ecrit += send(pfds[j].fd, serialized_msg + ecrit, size-ecrit, 0); // ??? -> on cast la struct en char* et on envoie le char* du résultat
+                            ecrit += send(pfds[j].fd, serialized_msg + ecrit, size-ecrit, 0); 
                         }   
                     }
                 }
+
+                free(mess);
+                free(serialized_msg);
 
             }
         }
