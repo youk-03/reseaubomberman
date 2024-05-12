@@ -20,12 +20,12 @@ typedef struct info_joueur_deroulement {
 } info_joueur_deroulement;
 
 int join_req(message_debut_client* msg_client, int mode) { //1 si solo, 2 si équipes,à bouger vers un autre fichier
-  msg_client->CODEREQ_IQ_EQ = htons(mode);
+  msg_client->CODEREQ_ID_EQ = htons(mode);
   return 0;
 }
 
 int ready_req(message_debut_client* msg_client, info_joueur * info_joueur) {
-  msg_client->CODEREQ_IQ_EQ = htons((info_joueur->team << 15) | (info_joueur->id << 13) | (info_joueur->mode));
+  msg_client->CODEREQ_ID_EQ = htons((info_joueur->team << 15) | (info_joueur->id << 13) | (info_joueur->mode));
   return 0;
 }
 

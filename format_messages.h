@@ -14,7 +14,7 @@
 
 
 typedef struct message_debut_client {
-    uint16_t CODEREQ_IQ_EQ;
+    uint16_t CODEREQ_ID_EQ;
 } message_debut_client ;
 
 
@@ -40,7 +40,7 @@ typedef struct message_tchat_client {
 /* intégrer et démarer une partie */
 
 typedef struct message_debut_serveur {
-    uint16_t CODEREQ_ID_EQ;
+    uint16_t CODEREQ_ID_EQ; // si le jeu est en équipe, eq = id%2
     uint16_t PORTUDP;
     uint16_t PORTMDIFF;
     uint16_t ADRMDIFF[8]; // sinon unigned char ADRMDIFF[16] avec inet_pton
@@ -70,8 +70,8 @@ typedef struct modified_cases_msg{
 typedef struct message_tchat{ 
     uint16_t CODEREQ_ID_EQ; // big endian
     uint8_t LEN;
-    char * DATA; // pas sure du type
-} message_tchat_serveur;
+   // char * DATA; // pas sure du type
+} message_tchat;
 
 /* la fin de partie */
 

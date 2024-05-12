@@ -186,27 +186,84 @@ void *serve_tchat(void * arg) {
                 memset(buf, 0, SIZE_MESS);
 
                 // On reçoit
-                int recu = recv(pfds[i].fd, buf, SIZE_MESS * sizeof(char), 0);
-                if (recu < 0){
-                    perror("erreur lecture");
-                    return NULL;
-                }
-                if (recu == 0){
-                    printf("serveur off\n");
-                    return NULL;
+                message_tchat * mess = malloc(sizeof(message_tchat)); // free
+                memset(mess, 0, sizeof(message_tchat));
+
+                // On reçoit les premiers champs d'abords
+                int recu = 0;
+                while(recu<16+8) { 
+                    int r = recv(pfds[i].fd, buf+recu, 16+8, 0);
+                    if (r<0){
+                        perror("erreur lecture");
+                        return NULL;
+                    }
+                    if (r==0) {
+                        printf("serveur off");
+                        return NULL;
+                    }
+                    recu += r;
                 }
 
+                memcpy(mess,(message_tchat*)&buf,sizeof(message_tchat));
+                // vérifier le premier champs
+                // lire la taille du message
+                uint16_t codereq_id_eq = ntohs(mess->CODEREQ_ID_EQ);
+                uint16_t codereq = codereq_id_eq & 0b1111111111111; // pour lire 13 bits
+                printf("message tchat, codereq: %d \n",codereq);
+                // TODO : égal à 7 ou 8
+                // id
+                uint16_t id = ( codereq_id_eq >>13) & 0b11;
+                if (id > 3){
+                    printf("message tchat, erreur valeur id dans message reçu\n");
+                    return NULL;
+                }
+                // eq
+                uint16_t eq;
+                if (codereq==8){
+                    eq = ( codereq_id_eq >> 13) & 0b1;
+                    if (eq != id%2) {
+                        printf("message tchat, erreur valeur eq dans message reçut\n");
+                        return NULL;
+                    }
+                }
+
+                uint8_t len = mess->LEN;
+                char buf_data[len];
+                memset(buf_data, 0, len);
+
+                // on reçoit la data
+                recu = 0;
+                while(recu<len) { 
+                    int r = recv(pfds[i].fd, buf_data+recu, len, 0);
+                    if (r<0){
+                        perror("erreur lecture");
+                        return NULL;
+                    }
+                    if (r==0) {
+                        printf("serveur off");
+                        return NULL;
+                    }
+                    recu += r;
+                }
+                printf("message tchat : %s\n",buf_data);
+
+                int size = sizeof(message_tchat) + len;
+                char* serialized_msg = malloc(size); // free
+                memset(serialized_msg, 0, sizeof(message_tchat));
+                memcpy(serialized_msg, mess,sizeof(message_tchat));
+                memcpy(serialized_msg+sizeof(message_tchat), buf_data,len );
+
+
                 // On envoie aux autres
-                char bufsend[SIZE_MESS+5];
+                /*char bufsend[SIZE_MESS+5];
                 memset(bufsend, 0, SIZE_MESS);
-                sprintf(bufsend, "J%d : %s", i, buf);
+                sprintf(bufsend, "J%d : %s", i, buf);*/
                 for (int j=0; j<4; j++){
-                    if (j!=i) {
-                        int ecrit = send(pfds[j].fd, bufsend, strlen(bufsend), 0);
-                        if(ecrit <= 0){
-                            perror("erreur ecriture tchat");
-                            return NULL;
-                        }
+                    if (j!=i && ((codereq!=8) || j%2==eq)) {
+                        int ecrit = 0;  
+                        while (ecrit<size){
+                            ecrit += send(pfds[j].fd, serialized_msg + ecrit, size-ecrit, 0); // ??? -> on cast la struct en char* et on envoie le char* du résultat
+                        }   
                     }
                 }
 
