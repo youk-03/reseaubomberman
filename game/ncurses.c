@@ -103,7 +103,7 @@ void free_bomb(bomb * b){
     free(b); 
 }
 
-bool bomb_explode(bomb* bomb, board *board, bomblist *list){//true si character meurt
+bool bomb_explode(bomb* bomb, board *board, bomblist *list, OBJECT obj){//true si character meurt
     pos *p = bomb->bpos;
     bool res= false;
     //x+2 reminder footstep size 2
@@ -114,10 +114,14 @@ bool bomb_explode(bomb* bomb, board *board, bomblist *list){//true si character 
             //continu casser niveau 2
             if(get_grid(board,p->x+4,p->y) != WALL){
                 if(get_grid(board,p->x+4,p->y) == CHARACTER) res = true;
-                set_grid(board,p->x+4,p->y, EMPTY);//niveau 2
+                if(!(res && obj == EXPLODE)){
+                set_grid(board,p->x+4,p->y, obj);//niveau 2
+                }
             }
         }
-        set_grid(board,p->x+2,p->y, EMPTY);//niveau 1
+        if(!(res && obj == EXPLODE)){
+        set_grid(board,p->x+2,p->y, obj);//niveau 1
+        }
     }
 
     //y+1
@@ -128,10 +132,14 @@ bool bomb_explode(bomb* bomb, board *board, bomblist *list){//true si character 
             //continu casser niveau 2
             if(get_grid(board,p->x,p->y+2) != WALL){
                 if(get_grid(board,p->x,p->y+2) == CHARACTER) res = true;
-                set_grid(board,p->x,p->y+2, EMPTY);//niveau 2
+                if(!(res && obj == EXPLODE)){
+                set_grid(board,p->x,p->y+2, obj);//niveau 2
+                }
             }
         }
-        set_grid(board,p->x,p->y+1, EMPTY);//niveau 1
+        if(!(res && obj == EXPLODE)){
+        set_grid(board,p->x,p->y+1, obj);//niveau 1
+        }
     }
 
     //x-2 reminder footstep size 2
@@ -142,10 +150,14 @@ bool bomb_explode(bomb* bomb, board *board, bomblist *list){//true si character 
             //continu casser niveau 2
             if(get_grid(board,p->x-4,p->y) != WALL){
                 if(get_grid(board,p->x-4,p->y) == CHARACTER) res = true;
-                set_grid(board,p->x-4,p->y, EMPTY);//niveau 2
+                if(!(res && obj == EXPLODE)){
+                set_grid(board,p->x-4,p->y, obj);//niveau 2
+                }
             }
         }
-        set_grid(board,p->x-2,p->y, EMPTY);//niveau 1
+        if(!(res && obj == EXPLODE)){
+        set_grid(board,p->x-2,p->y, obj);//niveau 1
+        }
     }
 
     //y-1
@@ -156,39 +168,53 @@ bool bomb_explode(bomb* bomb, board *board, bomblist *list){//true si character 
             //continu casser niveau 2
             if(get_grid(board,p->x,p->y-2) != WALL){
                 if(get_grid(board,p->x,p->y-2) == CHARACTER) res = true;
-                set_grid(board,p->x,p->y-2, EMPTY);//niveau 2
+                if(!(res && obj == EXPLODE)){
+                set_grid(board,p->x,p->y-2, obj);//niveau 2
+                }
             }
         }
-        set_grid(board,p->x,p->y-1, EMPTY);//niveau 1
+        if(!(res && obj == EXPLODE)){
+        set_grid(board,p->x,p->y-1, obj);//niveau 1
+        }
     }
 
     //x+2 y-1 reminder footstep size 2
     if(get_grid(board,p->x+2,p->y-1) != WALL){
         //delete
         if(get_grid(board,p->x+2,p->y-1) == CHARACTER) res = true;
-        set_grid(board,p->x+2,p->y-1, EMPTY);//niveau 1
+        if(!(res && obj == EXPLODE)){
+        set_grid(board,p->x+2,p->y-1, obj);//niveau 1
+        }
     }
     //x+2 y+1
     if(get_grid(board,p->x+2,p->y+1) != WALL){
         //delete
         if(get_grid(board,p->x+2,p->y+1) == CHARACTER) res = true;
-        set_grid(board,p->x+2,p->y+1, EMPTY);//niveau 1
+        if(!(res && obj == EXPLODE)){
+        set_grid(board,p->x+2,p->y+1, obj);//niveau 1
+        }
     }
     //x-2 y-1
     if(get_grid(board,p->x-2,p->y-1) != WALL){
         //delete
         if(get_grid(board,p->x-2,p->y-1) == CHARACTER) res = true;
-        set_grid(board,p->x-2,p->y-1, EMPTY);//niveau 1
+            if(!(res && obj == EXPLODE)){
+        set_grid(board,p->x-2,p->y-1, obj);//niveau 1
+            }
     }
     //x-2 y+1
     if(get_grid(board,p->x-2,p->y+1) != WALL){
         //delete
         if(get_grid(board,p->x-2,p->y+1) == CHARACTER) res = true;
-        set_grid(board,p->x-2,p->y+1, EMPTY);//niveau 1
+        if(!(res && obj == EXPLODE)){
+        set_grid(board,p->x-2,p->y+1, obj);//niveau 1
+        }
     }
 
+if(obj == EMPTY){
     set_grid(board, bomb->bpos->x, bomb->bpos->y, EMPTY); //retire la bombe plateau
     remove_bomb(list,bomb); //retire bombe de la liste
+}
     return res;
 
 } 
@@ -200,8 +226,11 @@ bool maj_bomb(bomblist *list, int timepassed, board *board){
         if(tmp->bcontainer[i] != NULL){
         tmp->bcontainer[i]->timeleft = tmp->bcontainer[i]->timeleft - timepassed;
         if(tmp->bcontainer[i]->timeleft <= 0){
-            res = bomb_explode(tmp->bcontainer[i], board, list);
-          } 
+            res = bomb_explode(tmp->bcontainer[i], board, list, EMPTY);
+          }
+        else if(tmp->bcontainer[i]->timeleft <= 1000000){
+            bomb_explode(tmp->bcontainer[i], board, list, EXPLODE);
+          }
         }
     }
     return res;
@@ -241,10 +270,10 @@ void setup_board(board* board) {
     board->grid = calloc((board->w)*(board->h),sizeof(char));
     //printf("lines : %d, column: %d",board->w,board->h);
     maze1(board);
-    set_grid(board,1,1,CHARACTER); //joueur1
-    set_grid(board,board->w-1,1,CHARACTER2); //joueur2 verifier que les placements marchent bien 
-    set_grid(board,1,board->h-1,CHARACTER3); //joueur3
-    set_grid(board,board->w-1,board->h-1,CHARACTER4); //joueur4
+    // set_grid(board,1,1,CHARACTER); //joueur1
+    // set_grid(board,board->w-1,1,CHARACTER2); //joueur2 verifier que les placements marchent bien 
+    // set_grid(board,1,board->h-1,CHARACTER3); //joueur3
+    // set_grid(board,board->w-1,board->h-1,CHARACTER4); //joueur4
 
     getmaxyx(stdscr,lines,columns);
 }
@@ -290,12 +319,26 @@ void refresh_game(board* b, line* l) {
                     break;  
                 case BOMB:
                     c='o'; 
-                    break;                  
+                    break; 
+                case EXPLODE:
+                    c= '.'; break;                 
                 default:
                     c = '?';
                     break;
             }
+            if(c == 'O'){
+                attron(COLOR_PAIR(2));
+            }
+            else if(c == '.'){
+                attron(COLOR_PAIR(3));
+            }
             mvaddch(y+1,x+1,c);
+            if(c == 'O'){
+                attroff(COLOR_PAIR(2));
+            }
+            else if(c == '.'){
+                attroff(COLOR_PAIR(3));
+            }
         }
     }
     for (x = 0; x < b->w+2; x++) {
@@ -394,7 +437,7 @@ bool perform_action(board* b, pos* p, ACTION a,bomblist *list) {
     }
 
     p->y = (p->y + b->h)%b->h;
-    if(get_grid(b,p->x,p->y) == EMPTY){
+    if(get_grid(b,p->x,p->y) == EMPTY || get_grid(b,p->x,p->y) == EXPLODE){
     set_grid(b,p->x,p->y,CHARACTER);
     }
     else { //si mur pos change pas
@@ -409,48 +452,50 @@ bool perform_action(board* b, pos* p, ACTION a,bomblist *list) {
 
 
 
-// int main()
-// {
-//     board* b = malloc(sizeof(board));;
-//     line* l = malloc(sizeof(line));
-//     l->cursor = 0;
-//     pos* p = malloc(sizeof(pos));
-//     p->x = 0; p->y = 0;      //ICI-----------------------------------
+int main()
+{
+    board* b = malloc(sizeof(board));;
+    line* l = malloc(sizeof(line));
+    l->cursor = 0;
+    pos* p = malloc(sizeof(pos));
+    p->x = 0; p->y = 0;      //ICI-----------------------------------
 
-//     // NOTE: All ncurses operations (getch, mvaddch, refresh, etc.) must be done on the same thread.
-//     initscr(); /* Start curses mode */ // Initialise la structure WINDOW et autres paramètres
-//     raw(); /* Disable line buffering */
-//     intrflush(stdscr, FALSE); /* No need to flush when intr key is pressed */
-//     keypad(stdscr, TRUE); /* Required in order to get events from keyboard */
-//     nodelay(stdscr, TRUE); /* Make getch non-blocking */
-//     noecho(); /* Don't echo() while we do getch (we will manually print characters when relevant) */
-//     curs_set(0); // Set the cursor to invisible
-//     start_color(); // Enable colors
-//     init_pair(1, COLOR_YELLOW, COLOR_BLACK); // Define a new color style (text is yellow, background is black)
+    // NOTE: All ncurses operations (getch, mvaddch, refresh, etc.) must be done on the same thread.
+    initscr(); /* Start curses mode */ // Initialise la structure WINDOW et autres paramètres
+    raw(); /* Disable line buffering */
+    intrflush(stdscr, FALSE); /* No need to flush when intr key is pressed */
+    keypad(stdscr, TRUE); /* Required in order to get events from keyboard */
+    nodelay(stdscr, TRUE); /* Make getch non-blocking */
+    noecho(); /* Don't echo() while we do getch (we will manually print characters when relevant) */
+    curs_set(0); // Set the cursor to invisible
+    start_color(); // Enable colors
+    init_pair(1, COLOR_YELLOW, COLOR_BLACK); // Define a new color style (text is yellow, background is black)
+    init_pair(2, COLOR_MAGENTA, COLOR_BLACK);
+    init_pair(3, COLOR_RED, COLOR_BLACK);
 
-//     setup_board(b);
-//     int tick = 30*1000;
-//     bomblist *list =create_list(10);
+    setup_board(b);
+    int tick = 30*1000;
+    bomblist *list =create_list(10);
 
-//     while (true) {
-//         ACTION a = control(l);
-//         if (perform_action(b, p, a, list)) break;
-//         refresh_game(b,l);
-//         usleep(tick);
-//         if(maj_bomb(list,tick,b)) break;
-//         //3 sec plus tard bomb explode stocker la valeur en tant depuis que la bomb a été posé dans une struct bomb et une fois 3 secatteinte la faire exploser
-//         //je suis en train de faire de l'objet avec du c si c'est pas beau ça
-//     }
+    while (true) {
+        ACTION a = control(l);
+        if (perform_action(b, p, a, list)) break;
+        refresh_game(b,l);
+        usleep(tick);
+        if(maj_bomb(list,tick,b)) break;
+        //3 sec plus tard bomb explode stocker la valeur en tant depuis que la bomb a été posé dans une struct bomb et une fois 3 secatteinte la faire exploser
+        //je suis en train de faire de l'objet avec du c si c'est pas beau ça
+    }
 
-//     printf("gameover");
-//     free_board(b);
-//     empty_list(list);
+    printf("gameover");
+    free_board(b);
+    empty_list(list);
 
-//     curs_set(1); // Set the cursor to visible again
-//     endwin(); /* End curses mode */
+    curs_set(1); // Set the cursor to visible again
+    endwin(); /* End curses mode */
 
-//     free(p); free(l); free(b);
+    free(p); free(l); free(b);
 
-//     return 0;
+    return 0;
     
-// }
+}
