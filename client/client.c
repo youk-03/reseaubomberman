@@ -75,7 +75,7 @@ int send_message(info_joueur * info_joueur, char * message, int dest, int sock) 
 
   
   while (sent<size) {
-    int s = send(sock,buf+sent,size,0) ;
+    int s = send(sock,buf+sent,size-sent,0) ;
     if (s == -1) {
       perror("erreur de send");
       return 1 ; 
@@ -317,7 +317,7 @@ int send_req(int mode_input) {
     memset(start_msg, 0, sizeof(message_debut_client));
 
     //conversion de la struct en string
-    char* serialized_ready_msg = malloc(BUF_SIZE*sizeof(char));
+    char * serialized_ready_msg = malloc(sizeof(message_debut_client));
 
      if (serialized_ready_msg == NULL) {
       perror("erreur de malloc");
@@ -328,12 +328,12 @@ int send_req(int mode_input) {
     }
 
     ready_req(start_msg,info_joueur);
-    printf("id : %d , mode : %d, team : %d \n",info_joueur->id,info_joueur->mode,info_joueur->team);
+    printf("id : %d , mode : %d, team : %d \n",info_joueur->id,info_joueur->mode,info_joueur->team); // attention, l'id et la team sont inversés
     memcpy(serialized_ready_msg,start_msg,sizeof(&start_msg)); // 
     
     s = 0;
-    while (s < sizeof(serialized_ready_msg)) {
-      int sent = send(sock_tcp, serialized_ready_msg + s, sizeof(serialized_ready_msg) - s, 0);
+    while (s < sizeof(message_debut_client)) {
+      int sent = send(sock_tcp, serialized_ready_msg + s, sizeof(message_debut_client) - s, 0);
       if (sent == -1) {
         perror("erreur de send");
         close(sock_mdiff);
