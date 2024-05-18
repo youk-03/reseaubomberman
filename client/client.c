@@ -8,6 +8,7 @@
 #include <unistd.h>
 #include <pthread.h>
 #include <ncurses.h>
+#include <poll.h>
 #include "auxiliaire.h"
 #include "../game/myncurses.h"
 #include "../game/game.h"
@@ -275,7 +276,7 @@ full_grid_msg* send_req(int mode_input, info_joueur* info_joueur, int *sock_udp,
 
     // lecture de multidiffusion
 
-    char *buf= malloc(sizeof(full_grid_msg));
+    char *buf_recv= malloc(sizeof(full_grid_msg)); //faire d'abord un recv des premier octets pour savoir si c'est une full_grid_msg ou l'autre ?
     full_grid_msg *msg = malloc(sizeof(full_grid_msg)); 
 
 
@@ -283,17 +284,16 @@ full_grid_msg* send_req(int mode_input, info_joueur* info_joueur, int *sock_udp,
     int multicast_recu;
     socklen_t difflen = sizeof(diffadr);
 
-    memset(buf, 0, sizeof(buf));
-    if ((multicast_recu = recvfrom(*sock_mdiff, buf, sizeof(full_grid_msg), 0, (struct sockaddr *)&diffadr, &difflen)) < 0){
+    memset(buf_recv, 0, sizeof(buf_recv));
+    if ((multicast_recu = recvfrom(*sock_mdiff, buf_recv, sizeof(full_grid_msg), 0, (struct sockaddr *)&diffadr, &difflen)) < 0){
       perror("erreur de recvfrom");
       return NULL;
     }
-    memcpy(msg, buf, sizeof(full_grid_msg));
-    printf("reçu en multidiffusion  : %s\n", buf);
+    memcpy(msg, buf_recv, sizeof(full_grid_msg));
 
 
-    free(buf);
-    buf=NULL;
+    free(buf_recv);
+    buf_recv=NULL;
     free(serv_msg);
     free(start_msg);
     free(serialized_msg);
@@ -339,6 +339,9 @@ int main(int argc, char *argv[]) {
 
   int id_joueur = info_joueur->id;
   board *board = malloc(sizeof(board)); 
+  
+  setup_board(board);//initialise la grid
+
   pos *pos = malloc(sizeof(pos)); 
 
   //initialise sa pos en fonction de qui il est 
@@ -349,8 +352,7 @@ int main(int argc, char *argv[]) {
     case 3: pos->x = board->w-1; pos->y = board->h-1; break;//joueur 4
   }
 
-
-  setup_board(board);//initialise la grid
+  dprintf(2,"je suis id %d, ma position : x: %d, y: %d\n",id_joueur, pos->x, pos->y);
 
   maj_grid(init_grid,board); //passage de req vers la grid pour l'affichage
 
@@ -378,60 +380,192 @@ int main(int argc, char *argv[]) {
      message_partie_client *msg;
 
      int env=-2;
-     char *buffer = malloc(sizeof(message_partie_client)+1);
-     memset(buffer,0,sizeof(message_partie_client)+1);
+     char *buf_send = malloc(sizeof(message_partie_client)+1);
+     memset(buf_send,0,sizeof(message_partie_client)+1);
+    
+
+    int multicast_recu=-2;
+
+    char *buf_recv= malloc(sizeof(full_grid_msg));
+    full_grid_msg *msg_recv = malloc(sizeof(full_grid_msg)); 
+    modified_cases_msg *modified_msg_recv = malloc(sizeof(modified_cases_msg));
+    u_int16_t codereq = 0;
+
+    //version avec poll
+    int fd_size = 2;
+    struct pollfd *pfds = malloc(sizeof(*pfds) * fd_size);
+    memset(pfds, 0, sizeof(*pfds) * fd_size);
+    pfds[0].fd = *sock_udp;
+    pfds[1].fd = *sock_mdiff;
+    pfds[1].events = POLLIN;
+    pfds[0].events = POLLOUT;
+    int poll_cpt = 0;
+    
+  
 
 
-    while (true) {
-        ACTION a = control(l);
+    while(true){
 
-        if (msg = perform_action_req(board, pos, a, list,info_joueur, num_msg)){ //joueur demande a quitter le jeu si NULL
-        num_msg++;
-        num_msg = num_msg%8192; //2^13
+      ACTION a = control(l);
 
-        memcpy(buffer,msg,sizeof(message_partie_client));
+      poll_cpt = poll(pfds, fd_size,0);
+
+      if(poll_cpt == -1){
+        perror("poll client");
+        //close free
+        exit(1);
+      }
+
+      if(poll_cpt == 0){
+        dprintf(2,"r to do wtf\n");
+        continue;
+      }
+
+        if(pfds[1].revents & POLLIN){
+
+          //reception donnee de grille
+          //recuperation des 12 premier octets pour connaitre la val de codereq et savoir si c'est full ou pas
+
+            memset(buf_recv, 0, sizeof(buf_recv));
+            if ((multicast_recu = recvfrom(*sock_mdiff, buf_recv, sizeof(full_grid_msg), 0, NULL, NULL)) < 0){
+              perror("erreur de recvfrom");
+              exit(-1);
+            }
+            if(multicast_recu == 0){
+              break;
+            }
+            memcpy(msg_recv, buf_recv, sizeof(full_grid_msg));
+
+            if((ntohs(msg_recv->CODEREQ_ID_EQ) & 0b1111111111111) == 11){ //full_grid
 
 
-          for(int i=0; i<sizeof(message_partie_client); i++){
-        printf("%02x", buffer[i]);
-    }   
+              maj_grid(msg_recv,board); //passage de req vers la grid pour l'affichage
+              memset(msg_recv, 0, sizeof(full_grid_msg));
 
-        //envoyer la struct au serveur en udp
-        env = sendto(*sock_udp, buffer, sizeof(message_partie_client), 0, (struct sockaddr *) serv_addr, sizeof(struct sockaddr_in6));
+            }
+            else if(codereq == 12){//modified_grid
 
-        if(env<0){
-          perror("echec sendto client game");
-          close(*sock_mdiff);
-          close(*sock_udp);
-          free(sock_udp);
-          free(sock_mdiff);
-          free(buffer);
-          free(init_grid);
-          free(info_joueur);
-          exit(0);
+            }
+            
+
+
+            refresh_game(board,NULL); //affiche board
+
+
+
         }
-        exit(0);
-           //printf("COUCOUu\n");
-        memset(buffer,0,sizeof(message_partie_client)+1);
-        memset(msg,0,sizeof(message_partie_client));
+        else if(pfds[0].revents & POLLOUT){
+          
+          //envoie de requete de deplacement
+
+            if ((msg = perform_action_req(board, pos, a, list,info_joueur, num_msg)) && a != QUIT){ //si msg NULL c'est que action == NONE
+
+              num_msg++;
+              num_msg = num_msg%8192; //2^13
+
+              memcpy(buf_send,msg,sizeof(message_partie_client));
+
+              //PRINT POUR DEBUG
+
+              for(int i=0; i<sizeof(message_partie_client); i++){
+                dprintf(2,"%02x", buf_send[i]);
+              }          
+              dprintf(2,"\n");
+
+              //PRINT POUR DEBUG FIN
+
+              env = sendto(*sock_udp, buf_send, sizeof(message_partie_client), 0, (struct sockaddr *) serv_addr, sizeof(struct sockaddr_in6));
+
+              if(env<0){
+                perror("echec sendto client game");
+                close(*sock_mdiff);
+                close(*sock_udp);
+                free(sock_udp);
+                free(sock_mdiff);
+                free(buf_send);
+                free(init_grid);
+                free(info_joueur);
+                exit(0);
+              }
+
+              memset(buf_send,0,sizeof(message_partie_client)+1);
+              free(msg);
+
+            }
+            else if(a== QUIT){
+              break;
+            }
+
+        }
+      
+
+    }
+
+
+   // while (true) {
+       // ACTION a = control(l);
+
+    //     if ((msg = perform_action_req(board, pos, a, list,info_joueur, num_msg)) && a != QUIT){ //joueur demande a quitter le jeu si NULL
+    //     num_msg++;
+    //     num_msg = num_msg%8192; //2^13
+
+    //     memcpy(buf_send,msg,sizeof(message_partie_client));
+
+    //     for(int i=0; i<sizeof(message_partie_client); i++){
+    //     dprintf(2,"%02x", buf_send[i]);
+    // }          
+    // dprintf(2,"\n");
+
+    //     //envoyer la struct au serveur en udp
+    //     env = sendto(*sock_udp, buf_send, sizeof(message_partie_client), 0, (struct sockaddr *) serv_addr, sizeof(struct sockaddr_in6));
+
+    //     if(env<0){
+    //       perror("echec sendto client game");
+    //       close(*sock_mdiff);
+    //       close(*sock_udp);
+    //       free(sock_udp);
+    //       free(sock_mdiff);
+    //       free(buf_send);
+    //       free(init_grid);
+    //       free(info_joueur);
+    //       exit(0);
+    //     }
+
+    //     memset(buf_send,0,sizeof(message_partie_client)+1);
+    //     memset(msg,0,sizeof(message_partie_client));
 
 
 
         //recevoir un message du serveur en udp
 
-        //avec poll donc déclarer 2 socket udp
+    // memset(buf_recv, 0, sizeof(buf_recv));
+    // if ((multicast_recu = recvfrom(*sock_mdiff, buf_recv, sizeof(full_grid_msg), 0, NULL, NULL)) < 0){
+    //   perror("erreur de recvfrom");
+    //   exit(-1);
+    // }
+    // if(multicast_recu == 0){
+    //   break;
+    // }
+    // memcpy(msg_recv, buf_recv, sizeof(full_grid_msg));
 
-        //maj la grid en fonction du message 
-        //gerer en parallele l'envoie des req et la reception des req ? pour qu'elle se fasse en même temps (avec poll ?)
+    // maj_grid(msg_recv,board); //passage de req vers la grid pour l'affichage
 
-        //refresh_game(board,l);
-        //usleep(tick);
-        //if(maj_bomb(list,tick,board)) break;
-        free(msg);/////////////////////
+    // refresh_game(board,NULL); //affiche board
 
-        }
+    // memset(msg_recv, 0, sizeof(full_grid_msg));
 
-    }
+       // free(msg);/////////////////////
+
+         //curs_set(1); // Set the cursor to visible again
+         //endwin(); /* End curses mode */
+         //exit(0);
+
+        //}
+        // else if(a== QUIT){
+        //   break;
+        // }
+
+    //}
 
     printf("gameover");
     free_board(board);
@@ -455,9 +589,14 @@ int main(int argc, char *argv[]) {
     close(*sock_udp);
     free(sock_udp);
     free(sock_mdiff);
-    free(buffer);
+    free(buf_send);
     free(info_joueur);
     free(msg);
+    free(buf_recv);
+    free(msg_recv);
+    free(pfds);
+    free(modified_msg_recv);
+    
   return 0;
 
   //rajouter le jeux, la grille avec le board toussa toussa et faire en sorte que quand le 

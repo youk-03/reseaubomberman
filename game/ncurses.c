@@ -422,7 +422,7 @@ ACTION control(line* l) { //Reecrire cette fonc mais de maniere à faire une req
 }
 
 
-bool perform_action(board* b, pos* p, ACTION a,bomblist *list) {
+bool perform_action(board* b, pos* p, ACTION a,bomblist *list, int character) {//maj la pos et la grid
     int xd = 0;
     int yd = 0;
     int prevx = p->x;
@@ -454,7 +454,7 @@ bool perform_action(board* b, pos* p, ACTION a,bomblist *list) {
 
     p->y = (p->y + b->h)%b->h;
     if(get_grid(b,p->x,p->y) == EMPTY || get_grid(b,p->x,p->y) == EXPLODE){
-    set_grid(b,p->x,p->y,CHARACTER);
+    set_grid(b,p->x,p->y,character);//mettre id du character ici instead
     }
     else { //si mur pos change pas
         p->x = prevx;

@@ -16,6 +16,7 @@ pthread_mutex_t verrou_partie = PTHREAD_MUTEX_INITIALIZER; // utiliser pour ajou
 
 static int port_nb = 24000;
 static int addr_nb = 1;
+unsigned int num_msg = 0;
 
 joueur * ajoute_joueur(partie * p, int sock){ // Peut-être bouger dans un autre fichier
     pthread_mutex_lock(&verrou_partie);
@@ -50,7 +51,7 @@ joueur * ajoute_joueur(partie * p, int sock){ // Peut-être bouger dans un autre
 partie * nouvelle_partie(int equipes){ //ICI INITIALISER LE BOARD
     partie * p = malloc(sizeof(partie));
     memset(p, 0, sizeof(partie));
-    p->addr_multi=malloc(sizeof(char)*60); //todo: penser à free
+    p->addr_multi=malloc(sizeof(char)*60); //todo: penser à FREE
     if (p->addr_multi == NULL) {
         perror("erreur de malloc");
     }
@@ -65,7 +66,7 @@ partie * nouvelle_partie(int equipes){ //ICI INITIALISER LE BOARD
     //p->addr_multi = str;
     memcpy(p->addr_multi,str,sizeof(str));
 
-    p->board = malloc(sizeof(board)); //PAS ENCORE FREE POUR LE MOMENT Y PENSER
+    p->board = malloc(sizeof(board)); 
     setup_board(p->board); //board initial
     return p;
 }
@@ -138,13 +139,17 @@ void *serve_partie(void * arg) { // fonction pour le thread de partie
     // multidiffuse la grille initiale
 
 
-    full_grid_msg *req =full_grid_req(board, 5); 
+    full_grid_msg *req =full_grid_req(board, 5);  
     char *buffer = malloc(sizeof(full_grid_msg)+1); 
     memcpy(buffer,req,sizeof(full_grid_msg));
 
     int s = sendto(sock_multi, buffer, sizeof(full_grid_msg), 0, (struct sockaddr*)&gradr, sizeof(gradr));
     if (s < 0)
         perror("erreur send !!!");
+
+    free(req);
+    req = NULL;
+    memset(buffer, 0,sizeof(full_grid_msg)+1);
 
 
 
@@ -153,17 +158,22 @@ void *serve_partie(void * arg) { // fonction pour le thread de partie
     char buf_recv[sizeof(message_partie_client)+1];
     memset(&buf_recv, 0, sizeof(message_partie_client)+1);
 
+    message_partie_client *msg_partie = malloc(sizeof(message_partie_client));
+    memset(msg_partie, 0, sizeof(message_partie_client));
+
     int sock_udp_recv = socket(AF_INET6, SOCK_DGRAM, 0);
     struct sockaddr_in6 serv_udp_addr;
     serv_udp_addr.sin6_addr = in6addr_any;
     serv_udp_addr.sin6_family = AF_INET6;
     serv_udp_addr.sin6_port = htons(p.port);
-    printf("port %d\n", p.port);
     
     if(bind(sock_udp_recv, (struct sockaddr*) &serv_udp_addr, sizeof(serv_udp_addr))) {
       perror("echec de bind serveur udp ecoute");
+      //tout FREE
       exit(-1);
     }
+
+    while(1){
 
     printf("reception requete client partie...\n");
     int r = recvfrom(sock_udp_recv, buf_recv, sizeof(message_partie_client), 0,NULL, NULL);
@@ -178,11 +188,44 @@ void *serve_partie(void * arg) { // fonction pour le thread de partie
 
     printf("\n");
 
+    memcpy(msg_partie, buf_recv, sizeof(message_partie_client));
+
+    memset(buf_recv, 0, sizeof(message_partie_client));
+
+    //mettre a jour la pos du joueur d'id 
+
+
+    //envoie d'une nouvelle full grid msg apres modif de la premiere
+    int id = ntohs(msg_partie->CODEREQ_ID_EQ) >> 13 & 0b11;
+    printf("requete de : %d, ma pos x: %d, y:%d\n", id, p.joueurs[id]->pos->x,p.joueurs[id]->pos->y);
+
+    req =from_clientreq_tofullgridreq(board,msg_partie, num_msg, p.joueurs[id]->pos);  //maj le board avant
+    memcpy(buffer,req,sizeof(full_grid_msg));
+
+            for(int i=0; i<sizeof(full_grid_msg); i++){
+        printf("%02x", buffer[i]);
+    }    
+
+    printf("\n");
+
+    s = sendto(sock_multi, buffer, sizeof(full_grid_msg), 0, (struct sockaddr*)&gradr, sizeof(gradr));
+    if (s < 0)
+        perror("erreur send !!!");
+
+    num_msg++;
+    num_msg = num_msg%8192; //2^13
+
+        free(req);
+        memset(msg_partie, 0, sizeof(message_partie_client));
+        memset(buffer, 0, sizeof(full_grid_msg));
+    }
+
 
     free(req);
     req= NULL;
     free(buffer);
     buffer = NULL;
+    free_board(board);
 
     //associer a tous les joueurs leurs positions FAIT
     //+ faire en sorte que l'ecran ncurses s'affiche pour les joueurs et qu'ils jouent bien leurs joueurs 

@@ -94,9 +94,37 @@ void maj_grid (full_grid_msg *msg, board *b){
     }
 }
 
+full_grid_msg* from_clientreq_tofullgridreq(board *board, message_partie_client *msg, unsigned int num_msg, pos* pos ){
+
+    int id = ntohs(msg->CODEREQ_ID_EQ) >> 13 & 0b11;
+    int action =ntohs(msg->NUM_ACTION) >> 13 & 0b111;
+    unsigned int num = ntohs(msg->NUM_ACTION) & 0b1111111111111;
+    ACTION a;
+
+    printf("%d id, %u num, %d action\n", id, num, action);
+    //switch action
+    switch(action){
+        case 0: a = UP; break;
+        case 1: a=RIGHT; break;
+        case 2: a=DOWN; break;
+        case 3: a=LEFT; break;
+        case 4: a=PBOMB; break;
+        case 5: a=QUIT;  break; 
+    }
+    //setgrid
+    perform_action(board, pos, a, NULL, id);//bomb list
+
+    //fullgrid req
+    return full_grid_req(board, 7);
+
+    //return
+
+}
+
 message_partie_client* perform_action_req(board* b, pos* p, ACTION a,bomblist *list, info_joueur *info_joueur, unsigned int num) {
     int xd = 0;
     int yd = 0;
+    bool possible = false;
 
     message_partie_client *msg = malloc(sizeof(message_partie_client));
     if(!msg){
@@ -117,7 +145,7 @@ message_partie_client* perform_action_req(board* b, pos* p, ACTION a,bomblist *l
          move_req(msg, info_joueur, a, num); return msg;
         case QUIT:
          move_req(msg, info_joueur, a, num); return msg;
-        default: return NULL; 
+        default: free(msg); return NULL; 
     }
     p->x += xd; p->y += yd;
     p->x = (p->x + b->w)%b->w;
@@ -131,9 +159,12 @@ message_partie_client* perform_action_req(board* b, pos* p, ACTION a,bomblist *l
 
     p->y = (p->y + b->h)%b->h;
     if(get_grid(b,p->x,p->y) == EMPTY || get_grid(b,p->x,p->y) == EXPLODE){
+        possible=true;
         move_req(msg, info_joueur, a, num);
     }
-
+    if(!possible){
+        free(msg); return NULL;
+    }
     return msg;
 }
 

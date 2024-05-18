@@ -54,7 +54,7 @@ void set_grid(board* b, int x, int y, int v);
 void setbomb(board* b, pos* p, bomblist *list);
 void refresh_game(board* b, line* l);
 ACTION control(line* l);
-bool perform_action(board* b, pos* p, ACTION a,bomblist *list);
+bool perform_action(board* b, pos* p, ACTION a,bomblist *list, int character);
 
 
 #endif
