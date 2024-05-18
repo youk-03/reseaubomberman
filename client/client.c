@@ -367,6 +367,10 @@ int send_req(int mode_input) {
     free(serialized_msg);
     free(serialized_serv_msg);
     free(serialized_ready_msg);
+
+    close(sock_tcp);
+    close(sock_mdiff);
+    close(sock_udp);
   
 
 

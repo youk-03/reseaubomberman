@@ -210,7 +210,6 @@ void *serve_tchat(void * arg) {
                 // lire la taille du message
                 uint16_t codereq_id_eq = ntohs(mess->CODEREQ_ID_EQ);
                 uint16_t codereq = codereq_id_eq & 0b1111111111111; // pour lire 13 bits
-                printf("message tchat, codereq: %d \n",codereq);
                 // TODO : égal à 7 ou 8
                 // id
                 uint16_t id = ( codereq_id_eq >>13) & 0b11;
@@ -231,6 +230,8 @@ void *serve_tchat(void * arg) {
                 uint8_t len = mess->LEN;
                 char buf_data[len];
                 memset(buf_data, 0, len);
+
+                printf("message tchat, codereq: %d, size : %d \n",codereq, len);
 
                 // on reçoit la data
                 recu = 0;
