@@ -8,6 +8,7 @@
 #include <arpa/inet.h>
 #include <net/if.h>
 #include "../format_messages.h" 
+#include "../client/auxiliaire.h"
 #include "game.h"
 #include "myncurses.h"
 #include <bits/socket.h>
@@ -61,6 +62,7 @@ full_grid_msg* full_grid_req (board *b, unsigned int num){
             case BWALL: casei= 2; break;
             case WALL: casei = 1; break;
             case BOMB: casei = 3; break;
+            case EXPLODE: casei = 4; break;
         }
         res->CASE[i] = casei;
     }
@@ -83,6 +85,7 @@ void maj_grid (full_grid_msg *msg, board *b){
                 case 2: set_grid(b,x,y, BWALL); break;
                 case 1: set_grid(b,x,y, WALL); break;
                 case 3: set_grid(b,x,y, BOMB); break;
+                case 4: set_grid(b,x,y, EXPLODE); break;
             }
 
             i++;
@@ -90,6 +93,50 @@ void maj_grid (full_grid_msg *msg, board *b){
         }
     }
 }
+
+message_partie_client* perform_action_req(board* b, pos* p, ACTION a,bomblist *list, info_joueur *info_joueur, unsigned int num) {
+    int xd = 0;
+    int yd = 0;
+
+    message_partie_client *msg = malloc(sizeof(message_partie_client));
+    if(!msg){
+        perror("malloc perform_action_req");
+        exit(-1);
+    }
+
+    switch (a) {
+        case LEFT:
+            xd = -2; yd = 0; break; //footsteps of size 2 for more fluidity !!!        
+        case RIGHT:
+            xd = 2; yd = 0; break;
+        case UP:
+            xd = 0; yd = -1; break;
+        case DOWN:
+            xd = 0; yd = 1; break;
+        case PBOMB : 
+         move_req(msg, info_joueur, a, num); return msg;
+        case QUIT:
+         move_req(msg, info_joueur, a, num); return msg;
+        default: return NULL; 
+    }
+    p->x += xd; p->y += yd;
+    p->x = (p->x + b->w)%b->w;
+
+    if(p->x == b->w-2){
+        p->x = b->w-1;
+    }
+    else if(p->x == 1){
+        p->x = 0;
+    }
+
+    p->y = (p->y + b->h)%b->h;
+    if(get_grid(b,p->x,p->y) == EMPTY || get_grid(b,p->x,p->y) == EXPLODE){
+        move_req(msg, info_joueur, a, num);
+    }
+
+    return msg;
+}
+
 
 // int main (int argc, char* argv[]){
 //     //test udp ipv6

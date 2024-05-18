@@ -5,6 +5,7 @@
 #include <unistd.h>
 #include <arpa/inet.h>
 #include "../format_messages.h"
+#include "../game/myncurses.h"
 
 
 typedef struct info_joueur {
@@ -29,7 +30,7 @@ int ready_req(message_debut_client* msg_client, info_joueur * info_joueur) {
   return 0;
 }
 
-int move_req(message_partie_client * msg_client, info_joueur * info_joueur) { //todo: voir comment on passe num et action
+int move_req(message_partie_client * msg_client, info_joueur * info_joueur, ACTION a, unsigned int num) { //TESTER POUR VOIR SI LA REQ S'ENVOIE BIEN
     int mode; 
     if (info_joueur->mode == 1) {
         mode=5;
@@ -43,9 +44,22 @@ int move_req(message_partie_client * msg_client, info_joueur * info_joueur) { //
     }
 
     msg_client->CODEREQ_ID_EQ=htons((eq << 15) | (info_joueur->id << 13) | mode );
-    //à compléter 
+    char action;
+
+    switch (a){
+    case UP: action=0; break;
+    case DOWN: action=2; break;
+    case LEFT: action=3; break;
+    case RIGHT: action=1; break;
+    case PBOMB:action=4; break;
+    case QUIT: action=5; break; //je vois pas l'interet de annuler la derniere demande de déplacement donc quit 
+    }
+
+    msg_client->NUM_ACTION = htons((action << 13) | num); 
+
     return 0;
 }
+
 
 int chat_req(message_tchat_client* msg_client, info_joueur_deroulement * info_joueur_deroulement, char * msg) {
     memset(msg_client,0,sizeof(message_tchat_client));

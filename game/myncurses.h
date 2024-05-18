@@ -6,7 +6,8 @@
 #define GRID_SIZE 1275
 
 typedef enum ACTION { NONE, UP, DOWN, LEFT, RIGHT, PBOMB, QUIT } ACTION;
-typedef enum OBJECT { EMPTY, BOMB, WALL, BWALL, CHARACTER, CHARACTER2, CHARACTER3, CHARACTER4} OBJECT; //breakable wall = wall - //character1 - 4 not implemented yet
+typedef enum OBJECT {CHARACTER, CHARACTER2, CHARACTER3, CHARACTER4,EMPTY, BOMB, WALL, BWALL,EXPLODE} OBJECT; //breakable wall = wall - //character1 - 4 not implemented yet
+
 
 typedef struct board {
     char* grid;
@@ -42,7 +43,7 @@ int remove_bomb(bomblist *list, bomb *data);
 void empty_list(bomblist *list);
 bomb* init_bomb(int x, int y);
 void free_bomb(bomb * b);
-bool bomb_explode(bomb* bomb, board *board, bomblist *list);
+bool bomb_explode(bomb* bomb, board *board, bomblist *list, OBJECT obj);
 bool maj_bomb(bomblist *list, int timepassed, board *board);
 void set_grid(board* b, int x, int y, int v);
 void maze1(board* board);
@@ -54,5 +55,6 @@ void setbomb(board* b, pos* p, bomblist *list);
 void refresh_game(board* b, line* l);
 ACTION control(line* l);
 bool perform_action(board* b, pos* p, ACTION a,bomblist *list);
+
 
 #endif

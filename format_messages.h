@@ -61,7 +61,9 @@ typedef struct modified_cases_msg{
     uint16_t CODEREQ_ID_EQ; // big endian
     uint16_t NUM; // big endian
     uint8_t NB;
-    //uint CASES; // les cases transmises, je suis pas sûre du type
+    //uint CASES; allouer un truc plus grand pour les cases puis l'envoyer comme ca ? 
+    //pour la reception tjr cast en struct et recuperer dans un tab de uint8_t de 
+    // taille nb
 } modified_cases_msg;
 
 

@@ -2,6 +2,7 @@
 #define AUXILIAIRE_H
 
 #include "../format_messages.h"
+#include "../game/myncurses.h"
 
 typedef struct info_joueur {
     int mode ;
@@ -21,6 +22,8 @@ int struct_to_string(message_debut_client * msg_cli, char * buf, int mode);
 int set_addrdiff(struct in6_addr * adrmdiff_convert, message_debut_serveur * serv_msg);
 
 int info_check(info_joueur * info_joueur, message_debut_serveur * serv_msg );
+
+int move_req(message_partie_client * msg_client, info_joueur * info_joueur, ACTION a, unsigned int num);
 
 
 

@@ -2,6 +2,7 @@
 
 #include "game.h"
 #include "myncurses.h"
+#include "../client/auxiliaire.h"
 #include <ncurses.h>
 #include <unistd.h>
 #include <stdlib.h>
@@ -243,6 +244,12 @@ bool maj_bomb(bomblist *list, int timepassed, board *board){
 void maze1(board* board){
     srand(time(NULL));
     int r;
+    for(int i=0; i<board->h; i++){
+        for(int j=0; j<board->w; j++){
+           set_grid(board,j,i,EMPTY); 
+        }
+    }
+
     for(int i=1; i<board->h-1; i+=2){ //==%2 impair
         for(int j=4; j<board->w-1; j+=4){ //%4 mod 4
             set_grid(board,j,i,WALL);
@@ -311,6 +318,15 @@ void refresh_game(board* b, line* l) {
                 case CHARACTER:
                     c = 'O';
                     break;
+                case CHARACTER2:
+                    c = 'O';
+                    break;
+                case CHARACTER3:
+                    c = 'O';
+                    break; 
+                case CHARACTER4:
+                    c = 'O';
+                    break;                  
                 case WALL:
                     c= '-';
                     break;
@@ -452,50 +468,51 @@ bool perform_action(board* b, pos* p, ACTION a,bomblist *list) {
 
 
 
-int main()
-{
-    board* b = malloc(sizeof(board));;
-    line* l = malloc(sizeof(line));
-    l->cursor = 0;
-    pos* p = malloc(sizeof(pos));
-    p->x = 0; p->y = 0;      //ICI-----------------------------------
 
-    // NOTE: All ncurses operations (getch, mvaddch, refresh, etc.) must be done on the same thread.
-    initscr(); /* Start curses mode */ // Initialise la structure WINDOW et autres paramètres
-    raw(); /* Disable line buffering */
-    intrflush(stdscr, FALSE); /* No need to flush when intr key is pressed */
-    keypad(stdscr, TRUE); /* Required in order to get events from keyboard */
-    nodelay(stdscr, TRUE); /* Make getch non-blocking */
-    noecho(); /* Don't echo() while we do getch (we will manually print characters when relevant) */
-    curs_set(0); // Set the cursor to invisible
-    start_color(); // Enable colors
-    init_pair(1, COLOR_YELLOW, COLOR_BLACK); // Define a new color style (text is yellow, background is black)
-    init_pair(2, COLOR_MAGENTA, COLOR_BLACK);
-    init_pair(3, COLOR_RED, COLOR_BLACK);
+// int main()
+// {
+//     board* b = malloc(sizeof(board));;
+//     line* l = malloc(sizeof(line));
+//     l->cursor = 0;
+//     pos* p = malloc(sizeof(pos));
+//     p->x = 0; p->y = 0;      //ICI-----------------------------------
 
-    setup_board(b);
-    int tick = 30*1000;
-    bomblist *list =create_list(10);
+//     // NOTE: All ncurses operations (getch, mvaddch, refresh, etc.) must be done on the same thread.
+//     initscr(); /* Start curses mode */ // Initialise la structure WINDOW et autres paramètres
+//     raw(); /* Disable line buffering */
+//     intrflush(stdscr, FALSE); /* No need to flush when intr key is pressed */
+//     keypad(stdscr, TRUE); /* Required in order to get events from keyboard */
+//     nodelay(stdscr, TRUE); /* Make getch non-blocking */
+//     noecho(); /* Don't echo() while we do getch (we will manually print characters when relevant) */
+//     curs_set(0); // Set the cursor to invisible
+//     start_color(); // Enable colors
+//     init_pair(1, COLOR_YELLOW, COLOR_BLACK); // Define a new color style (text is yellow, background is black)
+//     init_pair(2, COLOR_MAGENTA, COLOR_BLACK);
+//     init_pair(3, COLOR_RED, COLOR_BLACK);
 
-    while (true) {
-        ACTION a = control(l);
-        if (perform_action(b, p, a, list)) break;
-        refresh_game(b,l);
-        usleep(tick);
-        if(maj_bomb(list,tick,b)) break;
-        //3 sec plus tard bomb explode stocker la valeur en tant depuis que la bomb a été posé dans une struct bomb et une fois 3 secatteinte la faire exploser
-        //je suis en train de faire de l'objet avec du c si c'est pas beau ça
-    }
+//     setup_board(b);
+//     int tick = 30*1000;
+//     bomblist *list =create_list(10);
 
-    printf("gameover");
-    free_board(b);
-    empty_list(list);
+//     while (true) {
+//         ACTION a = control(l);
+//         if (perform_action(b, p, a, list)) break;
+//         refresh_game(b,l);
+//         usleep(tick);
+//         if(maj_bomb(list,tick,b)) break;
+//         //3 sec plus tard bomb explode stocker la valeur en tant depuis que la bomb a été posé dans une struct bomb et une fois 3 secatteinte la faire exploser
+//         //je suis en train de faire de l'objet avec du c si c'est pas beau ça
+//     }
 
-    curs_set(1); // Set the cursor to visible again
-    endwin(); /* End curses mode */
+//     printf("gameover");
+//     free_board(b);
+//     empty_list(list);
 
-    free(p); free(l); free(b);
+//     curs_set(1); // Set the cursor to visible again
+//     endwin(); /* End curses mode */
 
-    return 0;
+//     free(p); free(l); free(b);
+
+//     return 0;
     
-}
+// }
