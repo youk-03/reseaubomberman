@@ -250,12 +250,20 @@ void *serve_tchat(void * arg) {
                 }
                 printf("message tchat : %s\n",buf_data);
 
-                int size = sizeof(message_tchat) + len;
-                char* serialized_msg = malloc(size); 
-                memset(serialized_msg, 0, sizeof(message_tchat));
-                memcpy(serialized_msg, mess,sizeof(message_tchat));
-                memcpy(serialized_msg+sizeof(message_tchat), buf_data,len );
+                uint16_t dest;
+                if (codereq == 7) dest = 13;
+                else dest = 14;
 
+                mess->CODEREQ_ID_EQ=htons((eq << 15) | (id << 13) | (dest));
+                int size = 3 + len;
+                char* serialized_msg = malloc(size); 
+                memset(serialized_msg, 0, sizeof(size));
+                memcpy(serialized_msg, mess,3); 
+                memcpy(serialized_msg+3, buf_data,len );
+               // memcpy(buf+3, buf_data, len);
+               /* for (size_t i = 0; i < size; i++) {
+                    printf("%02X ", serialized_msg[i]); //hex
+                }*/
 
                 // On envoie aux autres
                 /*char bufsend[SIZE_MESS+5];
