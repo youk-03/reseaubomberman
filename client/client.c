@@ -15,7 +15,7 @@
 
 int send_message(info_joueur * info_joueur, char * message, int dest, int sock) {
 
-  int size = 16 + 8;
+  //int size = 3;
   message_tchat * mess = malloc(sizeof(message_tchat));
 
   if (mess==NULL) {
@@ -29,10 +29,11 @@ int send_message(info_joueur * info_joueur, char * message, int dest, int sock) 
   if(info_joueur->team!=0) exit(0) ; //uniquement pour le test
 
   mess->CODEREQ_ID_EQ=htons((info_joueur->team << 15) | (info_joueur->id << 13) | (dest));
-  mess->LEN=(uint8_t)(strlen(message)+1);
-  char * buf = malloc(sizeof(message_tchat))  ; //16 pour codereq_id_eq, 8 pour len
-  memset(buf, 0, sizeof(message_tchat));
-  memcpy(buf,mess,size);
+  mess->LEN=(uint8_t)(strlen(message)); // + 1?
+  int size = 3 + strlen(message);
+  char buf [size];//malloc(sizeof(message_tchat))  ; //16 pour codereq_id_eq, 8 pour len
+  memset(buf, 0, size);
+  memcpy(buf,mess,sizeof(message_tchat));
 
 
 
@@ -45,7 +46,7 @@ int send_message(info_joueur * info_joueur, char * message, int dest, int sock) 
 
 
 
-  int sent = 0 ;
+  /*int sent = 0 ;
   while(sent<size) {
     int s=send(sock,buf+sent,size-sent,0) ; 
     if (s == -1) {
@@ -53,27 +54,27 @@ int send_message(info_joueur * info_joueur, char * message, int dest, int sock) 
       return 1 ;
     } 
     sent+=s;
-  } 
+  } */
 
 
-  printf("taille msg %ld\n",sizeof(buf));
-  printf("envoye : %d \n",sent);
+  /*printf("taille msg %ld\n",sizeof(buf));
+  printf("envoye : %d \n",sent);*/
       
 
   // envoi du message 
 
 
 
-  char data [1+mess->LEN];
-  memcpy(data,message,sizeof(data));
+  //char data [1+mess->LEN];
+  memcpy(buf,message,strlen(message)*sizeof(char));
 
-  sent=0 ;
+  int sent=0 ;
 
-printf("contenu buffer : %s, size %ld \n",data,strlen(data));
+printf("contenu buffer : %s, size %d \n",buf,size);
 
   
-  while (sent<sizeof(data)) {
-    int s = send(sock,data+sent,strlen(data),0) ;
+  while (sent<size) {
+    int s = send(sock,buf+sent,size,0) ;
     if (s == -1) {
       perror("erreur de send");
       return 1 ; 

@@ -182,7 +182,7 @@ void *serve_tchat(void * arg) {
 
         for (int i=0; i<4; i++){
             if (pfds[i].revents & POLLIN) {
-                char buf[SIZE_MESS]; // TODO : utiliser le bon format
+                char buf[SIZE_MESS];
                 memset(buf, 0, SIZE_MESS);
 
                 // On reçoit
@@ -191,8 +191,8 @@ void *serve_tchat(void * arg) {
 
                 // On reçoit les premiers champs d'abords
                 int recu = 0;
-                while(recu<16+8) { 
-                    int r = recv(pfds[i].fd, buf+recu, 16+8, 0);
+                while(recu<3) { 
+                    int r = recv(pfds[i].fd, buf+recu, 3, 0);
                     if (r<0){
                         perror("erreur lecture");
                         return NULL;
