@@ -47,7 +47,7 @@ int send_message(info_joueur * info_joueur, char * message, int dest, int sock) 
 
 
 
-  /*int sent = 0 ;
+  int sent = 0 ;
   while(sent<size) {
     int s=send(sock,buf+sent,size-sent,0) ; 
     if (s == -1) {
@@ -55,11 +55,11 @@ int send_message(info_joueur * info_joueur, char * message, int dest, int sock) 
       return 1 ;
     } 
     sent+=s;
-  } */
+  } 
 
 
-  /*printf("taille msg %ld\n",sizeof(buf));
-  printf("envoye : %d \n",sent);*/
+  printf("taille msg %ld\n",sizeof(buf));
+  printf("envoye : %d \n",sent);
       
 
   // envoi du message 
@@ -69,19 +69,19 @@ int send_message(info_joueur * info_joueur, char * message, int dest, int sock) 
   //char data [1+mess->LEN];
   memcpy(buf,message,strlen(message)*sizeof(char));
 
-  int sent=0 ;
+//   sent=0 ;
 
   printf("contenu buffer : %s, size %d \n",buf,size);
 
   
-  while (sent<size) {
-    int s = send(sock,buf+sent,size-sent,0) ;
-    if (s == -1) {
-      perror("erreur de send");
-      return 1 ; 
-    }
-    sent+=s;
-  }
+  // while (sent<size) {
+  //   int s = send(sock,buf+sent,size-sent,0) ;
+  //   if (s == -1) {
+  //     perror("erreur de send");
+  //     return 1 ; 
+  //   }
+  //   sent+=s;
+  // }
 
   printf("message envoyé\n");
   while(1){
