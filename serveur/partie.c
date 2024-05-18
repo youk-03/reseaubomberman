@@ -192,7 +192,7 @@ void *serve_tchat(void * arg) {
 
                 // On reçoit les premiers champs d'abords
                 int recu = 0;
-                while(recu<3) { 
+                while(recu<sizeof(message_tchat)) { 
                     int r = recv(pfds[i].fd, buf+recu, 3, 0);
                     if (r<0){
                         perror("erreur lecture tchat entête");
@@ -206,10 +206,12 @@ void *serve_tchat(void * arg) {
                 }
 
                 memcpy(mess,(message_tchat*)&buf,sizeof(message_tchat));
+                printf("%d\n",mess->CODEREQ_ID_EQ);
                 // vérifier le premier champs
                 // lire la taille du message
                 uint16_t codereq_id_eq = ntohs(mess->CODEREQ_ID_EQ);
                 uint16_t codereq = codereq_id_eq & 0b1111111111111; // pour lire 13 bits
+                printf("codereq : %d\n",codereq);
                 // TODO : égal à 7 ou 8
                 // id
                 uint16_t id = ( codereq_id_eq >>13) & 0b11;
