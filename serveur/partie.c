@@ -182,6 +182,7 @@ void *serve_tchat(void * arg) {
 
         for (int i=0; i<4; i++){
             if (pfds[i].revents & POLLIN) {
+                printf("message %d ;\n",i);
                 char buf[SIZE_MESS];
                 memset(buf, 0, SIZE_MESS);
 
