@@ -30,7 +30,7 @@ int send_message(info_joueur * info_joueur, char * message, int dest, int sock) 
 
   mess->CODEREQ_ID_EQ=htons((info_joueur->team << 15) | (info_joueur->id << 13) | (dest));
   mess->LEN=(uint8_t)(strlen(message)); // + 1?
-  int size = 3 + strlen(message);
+  int size = 3 + strlen(message) + 1;
   char buf [size];//malloc(sizeof(message_tchat))  ; //16 pour codereq_id_eq, 8 pour len
   memset(buf, 0, size);
   memcpy(buf,mess,sizeof(message_tchat));
