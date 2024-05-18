@@ -259,7 +259,7 @@ void *serve_tchat(void * arg) {
                 // On envoie aux autres
                 /*char bufsend[SIZE_MESS+5];
                 memset(bufsend, 0, SIZE_MESS);
-                sprintf(bufsend, "J%d : %s", i, buf);*/
+                sprintf(bufsend, "J%d : %s", i, buf);*//*
                 for (int j=0; j<4; j++){
                     if (j!=i && ((codereq!=8) || j%2==eq)) {
                         int ecrit = 0;  
@@ -268,7 +268,7 @@ void *serve_tchat(void * arg) {
                         }   
                     }
                 }
-
+*/
                 free(mess);
                 free(serialized_msg);
 

@@ -70,7 +70,7 @@ int send_message(info_joueur * info_joueur, char * message, int dest, int sock) 
 
   int sent=0 ;
 
-printf("contenu buffer : %s, size %d \n",buf,size);
+  printf("contenu buffer : %s, size %d \n",buf,size);
 
   
   while (sent<size) {
@@ -83,6 +83,9 @@ printf("contenu buffer : %s, size %d \n",buf,size);
   }
 
   printf("message envoyé\n");
+  while(1){
+    
+  }
 
   return 0 ; 
 }
