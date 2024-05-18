@@ -176,7 +176,7 @@ void *serve_tchat(void * arg) {
         int poll_cpt = poll(pfds, 4, 0);
 
         if (poll_cpt == -1) {
-            perror("poll");
+            perror("erreur poll");
             return NULL;
         }
 
@@ -194,7 +194,7 @@ void *serve_tchat(void * arg) {
                 while(recu<3) { 
                     int r = recv(pfds[i].fd, buf+recu, 3, 0);
                     if (r<0){
-                        perror("erreur lecture");
+                        perror("erreur lecture tchat entête");
                         return NULL;
                     }
                     if (r==0) {
@@ -234,9 +234,9 @@ void *serve_tchat(void * arg) {
                 // on reçoit la data
                 recu = 0;
                 while(recu<len) { 
-                    int r = recv(pfds[i].fd, buf_data+recu, len, 0);
+                    int r = recv(pfds[i].fd, buf_data+recu, len-recu, 0);
                     if (r<0){
-                        perror("erreur lecture");
+                        perror("erreur lecture tchat data");
                         return NULL;
                     }
                     if (r==0) {

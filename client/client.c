@@ -82,6 +82,8 @@ printf("contenu buffer : %s, size %d \n",buf,size);
     sent+=s;
   }
 
+  printf("message envoyé\n");
+
   return 0 ; 
 }
 
