@@ -180,9 +180,9 @@ void *serve_tchat(void * arg) {
             return NULL;
         }
 
-        for (int i=0; i<4; i++){
-            if (pfds[i].revents & POLLIN) {
-                printf("message %d ;\n",i);
+        //for (int i=0; i<4; i++){
+            if (pfds[0].revents & POLLIN) { // à changer
+                printf("message %d ;\n",0);
                 char buf[SIZE_MESS];
                 memset(buf, 0, SIZE_MESS);
 
@@ -193,7 +193,7 @@ void *serve_tchat(void * arg) {
                 // On reçoit les premiers champs d'abords
                 int recu = 0;
                 while(recu<3) { 
-                    int r = recv(pfds[i].fd, buf+recu, 3-recu, 0);
+                    int r = recv(pfds[0].fd, buf+recu, 3-recu, 0); // à changer
                     if (r<0){
                         perror("erreur lecture tchat entête");
                         return NULL;
@@ -206,12 +206,10 @@ void *serve_tchat(void * arg) {
                 }
 
                 memcpy(mess,(message_tchat*)&buf,sizeof(message_tchat));
-                printf("%d\n",ntohs(mess->CODEREQ_ID_EQ));
                 // vérifier le premier champs
                 // lire la taille du message
                 uint16_t codereq_id_eq = ntohs(mess->CODEREQ_ID_EQ);
                 uint16_t codereq = codereq_id_eq & 0b1111111111111; // pour lire 13 bits
-                printf("codereq : %d\n",codereq);
                 // TODO : égal à 7 ou 8
                 // id
                 uint16_t id = ( codereq_id_eq >>13) & 0b11;
@@ -230,15 +228,16 @@ void *serve_tchat(void * arg) {
                 }
 
                 uint8_t len = mess->LEN;
-                char buf_data[len];
-                memset(buf_data, 0, len);
+                char buf_data[len+1];
+                memset(buf_data, 0, len+1);
 
                 printf("message tchat, codereq: %d, size : %d \n",codereq, len);
 
                 // on reçoit la data
                 recu = 0;
                 while(recu<len) { 
-                    int r = recv(pfds[i].fd, buf_data+recu, len-recu, 0);
+                    int r = recv(pfds[0].fd, buf_data+recu, len-recu, 0); // à changer
+                    printf("%s\n",buf_data);
                     if (r<0){
                         perror("erreur lecture tchat data");
                         return NULL;
@@ -275,6 +274,6 @@ void *serve_tchat(void * arg) {
                 free(serialized_msg);
 
             }
-        }
+        //}
     }
 }

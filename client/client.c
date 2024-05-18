@@ -30,22 +30,22 @@ int send_message(info_joueur * info_joueur, char * message, int dest, int sock) 
 
   mess->CODEREQ_ID_EQ=htons((info_joueur->team << 15) | (info_joueur->id << 13) | (dest));
   printf("%d\n", mess->CODEREQ_ID_EQ);
-  mess->LEN=(uint8_t)(strlen(message)+1); // + 1?
-  int size = 3 + strlen(message) + 1;
+  mess->LEN=(uint8_t)(strlen(message)); // + 1?
+  int size = 3 + strlen(message);
   char buf [size];//malloc(sizeof(message_tchat))  ; //16 pour codereq_id_eq, 8 pour len
   memset(buf, 0, size);
-  memcpy(buf,mess,sizeof(message_tchat));
+  memcpy(buf,mess,3);
 
 
-
-//    for (size_t i = 0; i < size; i++) {
-//     printf("%02X ", buf[i]); //hex
-// }
+  memcpy(buf+3,message,strlen(message)*sizeof(char));
+  /* for (size_t i = 0; i < size; i++) {
+     printf("%02X ", buf[i]); //hex
+ }*/
 // printf("\n");  
 
   //envoi de la première partie
 
-
+  printf("contenu buffer : %s, size %d \n",buf,size);
 
   int sent = 0 ;
   while(sent<size) {
@@ -67,11 +67,11 @@ int send_message(info_joueur * info_joueur, char * message, int dest, int sock) 
 
 
   //char data [1+mess->LEN];
-  memcpy(buf,message,strlen(message)*sizeof(char));
+  //memcpy(buf,message,strlen(message)*sizeof(char));
 
 //   sent=0 ;
 
-  printf("contenu buffer : %s, size %d \n",buf,size);
+ // printf("contenu buffer : %s, size %d \n",buf,size);
 
   
   // while (sent<size) {
