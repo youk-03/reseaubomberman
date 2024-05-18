@@ -180,8 +180,8 @@ void *serve_tchat(void * arg) {
             return NULL;
         }
 
-        //for (int i=0; i<4; i++){
-            if (pfds[0].revents & POLLIN) { // à changer
+        for (int i=0; i<4; i++){
+            if (pfds[i].revents & POLLIN) {
                 printf("message %d ;\n",0);
                 char buf[SIZE_MESS];
                 memset(buf, 0, SIZE_MESS);
@@ -193,7 +193,7 @@ void *serve_tchat(void * arg) {
                 // On reçoit les premiers champs d'abords
                 int recu = 0;
                 while(recu<3) { 
-                    int r = recv(pfds[0].fd, buf+recu, 3-recu, 0); // à changer
+                    int r = recv(pfds[i].fd, buf+recu, 3-recu, 0);
                     if (r<0){
                         perror("erreur lecture tchat entête");
                         return NULL;
@@ -236,7 +236,7 @@ void *serve_tchat(void * arg) {
                 // on reçoit la data
                 recu = 0;
                 while(recu<len) { 
-                    int r = recv(pfds[0].fd, buf_data+recu, len-recu, 0); // à changer
+                    int r = recv(pfds[i].fd, buf_data+recu, len-recu, 0);
                     printf("%s\n",buf_data);
                     if (r<0){
                         perror("erreur lecture tchat data");
@@ -260,20 +260,20 @@ void *serve_tchat(void * arg) {
                 // On envoie aux autres
                 /*char bufsend[SIZE_MESS+5];
                 memset(bufsend, 0, SIZE_MESS);
-                sprintf(bufsend, "J%d : %s", i, buf);*//*
-                for (int j=0; j<4; j++){
+                sprintf(bufsend, "J%d : %s", i, buf);*/
+           /*     for (int j=0; j<4; j++){
                     if (j!=i && ((codereq!=8) || j%2==eq)) {
                         int ecrit = 0;  
                         while (ecrit<size){
                             ecrit += send(pfds[j].fd, serialized_msg + ecrit, size-ecrit, 0); 
                         }   
                     }
-                }
-*/
+                } */
+
                 free(mess);
                 free(serialized_msg);
 
             }
-        //}
+        }
     }
 }
