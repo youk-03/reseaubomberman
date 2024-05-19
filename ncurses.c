@@ -20,6 +20,7 @@ typedef struct board {
 typedef struct line {
     char data[TEXT_SIZE];
     int cursor;
+    int clean; // pour savoir si il faut vider la ligne la prochaine fois qu'on écrit
 } line;
 
 typedef struct pos {
@@ -405,6 +406,10 @@ ACTION control(line* l) {
             print_message(0,"test",l);
             break;
         default:
+            if (l->clean) {
+                l->cursor = 0;
+                l->clean = 0;
+            }
             if (prev_c >= ' ' && prev_c <= '~' && l->cursor < TEXT_SIZE)
                 l->data[(l->cursor)++] = prev_c;
             break;
@@ -466,6 +471,7 @@ void print_message (int id, char * s, line * l){
     for (int i=0; i<strlen(text);i++){
         l->data[(l->cursor)++] = text[i];
     }
+    l->clean = 1;
 }
 
 
@@ -474,6 +480,7 @@ int main()
     board* b = malloc(sizeof(board));;
     line* l = malloc(sizeof(line));
     l->cursor = 0;
+    l->clean = 0;
     pos* p = malloc(sizeof(pos));
     p->x = 0; p->y = 0;
 
