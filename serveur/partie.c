@@ -284,22 +284,24 @@ void *serve_tchat(void * arg) {
                 memset(serialized_msg, 0, sizeof(size));
                 memcpy(serialized_msg, mess,3); 
                 memcpy(serialized_msg+3, buf_data,len );
+
+
                /* for (size_t i = 0; i < size; i++) {
                     printf("%02X ", serialized_msg[i]); //hex
                 }*/
 
                 // On envoie aux autres
-                /*char bufsend[SIZE_MESS+5];
+                char bufsend[SIZE_MESS+5];
                 memset(bufsend, 0, SIZE_MESS);
-                sprintf(bufsend, "J%d : %s", i, buf);*/
-           /*     for (int j=0; j<4; j++){
+                sprintf(bufsend, "J%d : %s", i, buf);
+                for (int j=0; j<4; j++){
                     if (j!=i && ((codereq!=8) || j%2==eq)) {
                         int ecrit = 0;  
                         while (ecrit<size){
                             ecrit += send(pfds[j].fd, serialized_msg + ecrit, size-ecrit, 0); 
                         }   
                     }
-                } */
+                }
 
                 free(mess);
                 free(serialized_msg);
