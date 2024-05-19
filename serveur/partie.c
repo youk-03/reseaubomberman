@@ -160,6 +160,30 @@ void *serve_partie(void * arg) { // fonction pour le thread de partie
     return NULL;
 }
 
+void fin_partie(int sock, u_int16_t gagnant, partie p){ // gagnant correspond soit à l'id du joueur ou de l'équipe gagnante
+    uint16_t * message = malloc(sizeof(uint16_t));
+    if (p.equipes == 0){ // fin partie dans équipes
+        * message = htons(gagnant<<13|15);
+    } else { // fin partie en équipes
+        * message = htons(gagnant<<15|16);
+    }
+
+    int size = sizeof(* message);
+    int sent = 0 ;
+    while(sent<size) {
+        int s=send(sock,message+sent,size-sent,0) ;  // à vérifier que ça marche :)
+        if (s == -1) {
+            perror("erreur envoi fin de partie") ;
+            free(message);
+            return ;
+        } 
+        sent+=s;
+    } 
+
+    free(message);
+
+}
+
 void *serve_tchat(void * arg) {
     printf("Début du tchat \n");
     partie p = *(partie *)arg;
@@ -260,7 +284,6 @@ void *serve_tchat(void * arg) {
                 memset(serialized_msg, 0, sizeof(size));
                 memcpy(serialized_msg, mess,3); 
                 memcpy(serialized_msg+3, buf_data,len );
-               // memcpy(buf+3, buf_data, len);
                /* for (size_t i = 0; i < size; i++) {
                     printf("%02X ", serialized_msg[i]); //hex
                 }*/

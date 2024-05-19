@@ -30,6 +30,8 @@ int partie_remplie(partie);
 
 void *serve_partie(void *);
 
+void fin_partie(int, u_int16_t, partie);
+
 void *serve_tchat(void *); 
 
 #endif
