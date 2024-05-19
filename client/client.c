@@ -7,6 +7,7 @@
 #include <string.h>
 #include <unistd.h>
 #include <pthread.h>
+#include <poll.h>
 #include "auxiliaire.h"
 
 #define PORT_TCP  1024
@@ -84,11 +85,36 @@ int send_message(info_joueur * info_joueur, char * message, int dest, int sock) 
   // }
 
   printf("message envoyé\n");
-  while(1){
-    
-  }
+ 
+/////////////////////////////////////////////////////////////// 2EME PARTIE: RECEPTION
 
   return 0 ; 
+}
+
+int communicate_tchat(int sock) {
+  struct pollfd * pfds = malloc(sizeof(*pfds));
+  memset(pfds, 0, sizeof(*pfds));
+  pfds[0].fd= sock;
+  pfds[0].events= POLLIN | POLLOUT ; 
+
+  while(1) { // en dehors de la fonction communicate_tchat
+    int poll_cpt = poll(pfds, 1, 0); 
+
+    if (poll_cpt == -1) {
+      perror("erreur poll");
+      return 1;
+    }
+
+    if (pfds[0].revents & POLLIN) {
+        //on reçoit le message
+    } 
+
+    if (pfds[0].revents & POLLOUT) {
+      // on envoie le message
+
+    }
+  }
+
 }
 
 
