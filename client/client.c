@@ -14,7 +14,7 @@
 #define ADDR  "::1" //"fdc7:9dd5:2c66:be86:7e57:58ff:fe68:b249" // c'est l'adresse du serveur
 #define BUF_SIZE 256
 
-int send_message(info_joueur * info_joueur, char * message, int dest, int sock) {
+int send_message(int sock,info_joueur * info_joueur, char * message, int dest) {
 
   //int size = 3;
   message_tchat * mess = malloc(sizeof(message_tchat));
@@ -26,7 +26,6 @@ int send_message(info_joueur * info_joueur, char * message, int dest, int sock) 
   if (info_joueur->mode == 3 && dest == 8 ) {
     perror("pas de coéquipier, impossible d'envoyer le message");
   }
-
 
 
   mess->CODEREQ_ID_EQ=htons((info_joueur->team << 15) | (info_joueur->id << 13) | (dest));
@@ -43,7 +42,6 @@ int send_message(info_joueur * info_joueur, char * message, int dest, int sock) 
 
   //printf("contenu buffer : %s, size %d \n",buf,size);
 
-   if(info_joueur->team!=0) goto ici ; //uniquement pour le test
 
   int sent = 0 ;
   while(sent<size) {
@@ -74,18 +72,21 @@ int send_message(info_joueur * info_joueur, char * message, int dest, int sock) 
   
 
   printf("message envoyé\n");
+  free(mess);
+  return 0;
+}
 
 //   //todo: bouger dans une autre méthode
 
 //   //réception des premiers champs
-  ici :
+int receive_message(int sock) {
 
+  message_tchat * mess = malloc(sizeof(message_tchat));
+  char buf [3];
   memset(mess,0,sizeof(message_tchat));
   memset(buf, 0, sizeof(buf));
 
  // retirer la ligne d'après
- if (info_joueur->team!=0) {
-
 
 
   int recu = 0;
@@ -125,13 +126,7 @@ int send_message(info_joueur * info_joueur, char * message, int dest, int sock) 
       recu += r;
   }
   printf("message tchat : %s\n",buf_data);
-
-//////////////////// retirer la ligne d'apres
-}
-  
-
-
- 
+  free(mess);
 // while(1){};
   return 0 ; 
 }
@@ -432,8 +427,20 @@ int send_req(int mode_input) {
       return -1;
     }
     printf("reçu en multidiffusion  : %s\n", buf);
-    send_message(info_joueur,"test message tchat",7,sock_tcp);
-    send_message(info_joueur,"second test",7,sock_tcp);
+    if(info_joueur->team==0){
+    send_message(sock_tcp,info_joueur,"test message tchat",7);
+    }
+
+    if(info_joueur->team!=0)
+    receive_message(sock_tcp);
+
+    if(info_joueur->team==1){
+    send_message(sock_tcp,info_joueur,"deuxieme",7);
+    }
+
+        if(info_joueur->team!=1)
+    receive_message(sock_tcp);
+
 
 
 
