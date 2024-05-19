@@ -57,6 +57,8 @@ void setbomb(board* b, pos* p, bomblist *list);
 void refresh_game(board* b, line* l);
 ACTION control(line* l);
 bool perform_action(board* b, pos* p, ACTION a,bomblist *list);
+//pour le tchat 
+void print_message (int id, char * s, line *l);
 
 //list
 
@@ -396,6 +398,12 @@ ACTION control(line* l) {
         case KEY_BACKSPACE:
             if (l->cursor > 0) l->cursor--;
             break;
+        case '%' : // envoyer un message
+            l->cursor = 0;
+            break;
+        case '#' : // recevoir un message (juste pour tester)
+            print_message(0,"test",l);
+            break;
         default:
             if (prev_c >= ' ' && prev_c <= '~' && l->cursor < TEXT_SIZE)
                 l->data[(l->cursor)++] = prev_c;
@@ -449,6 +457,16 @@ bool perform_action(board* b, pos* p, ACTION a,bomblist *list) {
     return false;
 }
 
+// tchat
+
+void print_message (int id, char * s, line * l){
+    l->cursor = 0;
+    char text [TEXT_SIZE];
+    sprintf(text, "joueur %d : %s",id, s);
+    for (int i=0; i<strlen(text);i++){
+        l->data[(l->cursor)++] = text[i];
+    }
+}
 
 
 int main()
