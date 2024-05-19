@@ -27,7 +27,7 @@ int send_message(info_joueur * info_joueur, char * message, int dest, int sock) 
     perror("pas de coéquipier, impossible d'envoyer le message");
   }
 
-  if(info_joueur->team!=0) exit(0) ; //uniquement pour le test
+
 
   mess->CODEREQ_ID_EQ=htons((info_joueur->team << 15) | (info_joueur->id << 13) | (dest));
   printf("%d\n", mess->CODEREQ_ID_EQ);
@@ -39,14 +39,11 @@ int send_message(info_joueur * info_joueur, char * message, int dest, int sock) 
 
 
   memcpy(buf+3,message,strlen(message)*sizeof(char));
-  /* for (size_t i = 0; i < size; i++) {
-     printf("%02X ", buf[i]); //hex
- }*/
-// printf("\n");  
-
   //envoi de la première partie
 
-  printf("contenu buffer : %s, size %d \n",buf,size);
+  //printf("contenu buffer : %s, size %d \n",buf,size);
+
+   if(info_joueur->team!=0) goto ici ; //uniquement pour le test
 
   int sent = 0 ;
   while(sent<size) {
@@ -75,19 +72,67 @@ int send_message(info_joueur * info_joueur, char * message, int dest, int sock) 
  // printf("contenu buffer : %s, size %d \n",buf,size);
 
   
-  // while (sent<size) {
-  //   int s = send(sock,buf+sent,size-sent,0) ;
-  //   if (s == -1) {
-  //     perror("erreur de send");
-  //     return 1 ; 
-  //   }
-  //   sent+=s;
-  // }
 
   printf("message envoyé\n");
- 
-/////////////////////////////////////////////////////////////// 2EME PARTIE: RECEPTION
 
+//   //todo: bouger dans une autre méthode
+
+//   //réception des premiers champs
+  ici :
+
+  memset(mess,0,sizeof(message_tchat));
+  memset(buf, 0, sizeof(buf));
+
+ // retirer la ligne d'après
+ if (info_joueur->team!=0) {
+
+
+
+  int recu = 0;
+  while(recu<3) { 
+      int r = recv(sock, buf+recu, 3-recu, 0);
+      if (r<0){
+          perror("erreur lecture tchat entête");
+          return 1;
+      }
+      recu += r;
+  }
+
+
+  
+  memcpy(mess,(message_tchat*)&buf,sizeof(message_tchat));
+  // on vérifie les champs
+  uint16_t codereq_id_eq = ntohs(mess->CODEREQ_ID_EQ);
+  uint16_t codereq = codereq_id_eq & 0b1111111111111; // pour lire 13 bits
+  uint16_t id = ( codereq_id_eq >>13) & 0b11; //
+  if (codereq == 15 || codereq == 16) {
+    puts("fin de partie");
+  }
+
+  uint8_t len = mess->LEN;
+  char buf_data[len+1];
+  memset(buf_data, 0, len+1);
+
+    // on reçoit la data
+  recu = 0;
+  while(recu<len) { 
+      int r = recv(sock, buf_data+recu, len-recu, 0);
+      //printf("%s\n",buf_data);
+      if (r<0){
+          perror("erreur lecture tchat data");
+          return 1;
+      }
+      recu += r;
+  }
+  printf("message tchat : %s\n",buf_data);
+
+//////////////////// retirer la ligne d'apres
+}
+  
+
+
+ 
+// while(1){};
   return 0 ; 
 }
 
@@ -388,6 +433,7 @@ int send_req(int mode_input) {
     }
     printf("reçu en multidiffusion  : %s\n", buf);
     send_message(info_joueur,"test message tchat",7,sock_tcp);
+    send_message(info_joueur,"second test",7,sock_tcp);
 
 
 
