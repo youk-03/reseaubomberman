@@ -467,7 +467,7 @@ void refresh_game(board* b, line* l) {
     refresh(); // Apply the changes to the terminal
 }
 
-ACTION control(line* l) { //Reecrire cette fonc mais de maniere à faire une requete à envoyer au serveur
+ACTION control(line* l, int sock_tcp, info_joueur * info_joueur) { //Reecrire cette fonc mais de maniere à faire une requete à envoyer au serveur
     int c;
     int prev_c = ERR;
     // We consume all similar consecutive key presses
@@ -478,6 +478,8 @@ ACTION control(line* l) { //Reecrire cette fonc mais de maniere à faire une req
         }
         prev_c = c;
     }
+    char buf[100];
+    memset(buf, 0, 100);
     ACTION a = NONE;
     switch (prev_c) {
         case ERR: break;
@@ -497,9 +499,20 @@ ACTION control(line* l) { //Reecrire cette fonc mais de maniere à faire une req
 
         
         case KEY_BACKSPACE:
-            if (l->cursor > 0) l->cursor--;
+            if (l->cursor > 0) (l->cursor)--;
+            break;
+        case '%' : // envoyer un message
+            if (l->clean == 0){
+                memcpy(buf, l->data, l->cursor);
+                send_message(sock_tcp,info_joueur, buf, 7); // à changer pour le mode en équipe
+                l->cursor = 0;
+            }
             break;
         default:
+            if (l->clean) {
+                l->cursor = 0;
+                l->clean = 0;
+            }
             if (prev_c >= ' ' && prev_c <= '~' && l->cursor < TEXT_SIZE)
                 l->data[(l->cursor)++] = prev_c;
             break;
@@ -552,7 +565,15 @@ bool perform_action(board* b, pos* p, ACTION a,bomblist *list, int character) {/
     return false;
 }
 
-
+void print_message (int id, char * s, line * l){
+    l->cursor = 0;
+    char text [TEXT_SIZE];
+    sprintf(text, "joueur %d : %s",id, s);
+    for (int i=0; i<strlen(text);i++){
+        l->data[(l->cursor)++] = text[i];
+    }
+    l->clean = 1;
+}
 
 
 // int main()

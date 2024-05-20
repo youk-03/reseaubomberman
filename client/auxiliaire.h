@@ -4,12 +4,7 @@
 #include "../format_messages.h"
 #include "../game/myncurses.h"
 
-typedef struct info_joueur {
-    int mode ;
-    int id ;
-    int team ; 
-} info_joueur ;
-
+int send_message(int sock,info_joueur * info_joueur, char * message, int dest);
 
 int join_req(message_debut_client* msg_client, int mode) ;
 
