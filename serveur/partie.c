@@ -7,6 +7,7 @@
 #include <unistd.h>
 #include <pthread.h>
 #include <net/if.h>
+#include <poll.h>
 #include "../format_messages.h"
 #include "partie.h"
 #include "../game/myncurses.h"
@@ -16,7 +17,6 @@ pthread_mutex_t verrou_partie = PTHREAD_MUTEX_INITIALIZER; // utiliser pour ajou
 
 static int port_nb = 24000;
 static int addr_nb = 1;
-unsigned int num_msg = 0;
 
 joueur * ajoute_joueur(partie * p, int sock){ // Peut-être bouger dans un autre fichier
     pthread_mutex_lock(&verrou_partie);
@@ -99,7 +99,19 @@ void *serve_partie(void * arg) { // fonction pour le thread de partie
 
 
     partie p = *(partie *)arg;
+    board *board_diff = malloc(sizeof(board));
+    setup_board(board_diff);
     board *board = p.board;
+    unsigned int num_msg = 0;
+    unsigned int tick = 10*1000;
+    unsigned int cpt_freq = 0;
+    unsigned int cpt_sec = 0;
+    unsigned int freq = 30*1000;
+
+    bool death[4] = {false};
+
+    //int tick = 30*1000;
+    bomblist *list =create_list(10);
 
     while(!partie_prete(p)){
     } //attente active peut-être faire autrement 
@@ -135,6 +147,9 @@ void *serve_partie(void * arg) { // fonction pour le thread de partie
     p.joueurs[3]->pos->x = p.board->w-1;
     p.joueurs[3]->pos->y = p.board->h-1;
 
+    //memcpy(board_diff, board, sizeof(board));
+    copy_board(board_diff, board);
+
 
     // multidiffuse la grille initiale
 
@@ -158,8 +173,12 @@ void *serve_partie(void * arg) { // fonction pour le thread de partie
     char buf_recv[sizeof(message_partie_client)+1];
     memset(&buf_recv, 0, sizeof(message_partie_client)+1);
 
-    message_partie_client *msg_partie = malloc(sizeof(message_partie_client));
-    memset(msg_partie, 0, sizeof(message_partie_client));
+    message_partie_client *msg_partie;
+
+    message_partie_client_liste *list_of_msg = create_list_msg(10);//FREE AVEC EMPTY
+
+    modified_cases_msg *modified_cases_msg; //free + free chaque tour de boucle
+    caseholder *caseholder;
 
     int sock_udp_recv = socket(AF_INET6, SOCK_DGRAM, 0);
     struct sockaddr_in6 serv_udp_addr;
@@ -173,52 +192,193 @@ void *serve_partie(void * arg) { // fonction pour le thread de partie
       exit(-1);
     }
 
+    //poll
+    int fd_size = 2;
+    struct pollfd *pfds = malloc(sizeof(*pfds) * fd_size);
+    memset(pfds, 0, sizeof(*pfds) * fd_size);
+    pfds[0].fd = sock_udp_recv;
+    pfds[1].fd = sock_multi;
+    pfds[0].events = POLLIN;
+    pfds[1].events = POLLOUT;
+    int poll_cpt = 0;
+
     while(1){
+        poll_cpt = poll(pfds, fd_size, 0);
 
-    printf("reception requete client partie...\n");
-    int r = recvfrom(sock_udp_recv, buf_recv, sizeof(message_partie_client), 0,NULL, NULL);
-    if(r<0){
-        perror(" recvfrom serveur udp erreur");
-    }
-    printf("requete client partie recu\n");
+        if(poll_cpt == -1){
+            perror("poll serveur");
+            //go to error
+            exit(-1);
+        }
 
-        for(int i=0; i<sizeof(message_partie_client); i++){
-        printf("%02x", buf_recv[i]);
-    }    
+        if(poll_cpt == 0){
+        dprintf(2,"r to do wtf\n");
+        continue;
+      }
 
-    printf("\n");
+      if(pfds[0].revents & POLLIN){
 
-    memcpy(msg_partie, buf_recv, sizeof(message_partie_client));
-
-    memset(buf_recv, 0, sizeof(message_partie_client));
-
-    //mettre a jour la pos du joueur d'id 
-
-
-    //envoie d'une nouvelle full grid msg apres modif de la premiere
-    int id = ntohs(msg_partie->CODEREQ_ID_EQ) >> 13 & 0b11;
-    printf("requete de : %d, ma pos x: %d, y:%d\n", id, p.joueurs[id]->pos->x,p.joueurs[id]->pos->y);
-
-    req =from_clientreq_tofullgridreq(board,msg_partie, num_msg, p.joueurs[id]->pos);  //maj le board avant
-    memcpy(buffer,req,sizeof(full_grid_msg));
-
-            for(int i=0; i<sizeof(full_grid_msg); i++){
-        printf("%02x", buffer[i]);
-    }    
-
-    printf("\n");
-
-    s = sendto(sock_multi, buffer, sizeof(full_grid_msg), 0, (struct sockaddr*)&gradr, sizeof(gradr));
-    if (s < 0)
-        perror("erreur send !!!");
-
-    num_msg++;
-    num_msg = num_msg%8192; //2^13
-
-        free(req);
+        //reception des requetes clients
+        memset(buf_recv, 0, sizeof(message_partie_client));
+        msg_partie= malloc(sizeof(message_partie_client));
         memset(msg_partie, 0, sizeof(message_partie_client));
-        memset(buffer, 0, sizeof(full_grid_msg));
+                
+        int r = recvfrom(sock_udp_recv, buf_recv, sizeof(message_partie_client), 0,NULL, NULL);
+        if(r<0){
+            perror(" recvfrom serveur udp erreur");
+        }
+
+        // for(int i=0; i<sizeof(message_partie_client); i++){
+        //     printf("%02x", buf_recv[i]);
+        // }    
+
+        //  printf("\n");
+
+        memcpy(msg_partie, buf_recv, sizeof(message_partie_client));
+        add_liste_msg(list_of_msg, msg_partie);//ajoute a la liste le msg recu
+
+      }
+
+      if(pfds[1].revents & POLLOUT) {
+        //envoie grille multidiffusion
+
+        if(cpt_freq >= freq){
+             cpt_freq = 0;
+
+             modified_cases_msg = maj_board(list_of_msg,list,&p,num_msg); //board modified
+
+    //         caseholder = get_difference(board_diff,board);
+    //        //memcpy(board_diff, board, sizeof(board));
+    //         copy_board(board_diff, board);
+
+    //         if(caseholder){
+    //                           printf("multidiff\n"); 
+
+    //         char buf_caseholder[sizeof(caseholder)];
+    //         memset(buf_caseholder,0, sizeof(caseholder));
+    //         memcpy(buf_caseholder, caseholder, sizeof(caseholder));
+
+    //         //declarer deux board 1 qui est modifié et l'autre non pour creer le differentiel des cases
+    //         //Faire un fonc qui retourne ce differentiel et send ça
+
+    //         char buf_modified_cases_msg[sizeof(struct modified_cases_msg)];
+    //         memset(buf_modified_cases_msg, 0, sizeof(struct modified_cases_msg));
+    //         memcpy(buf_modified_cases_msg, modified_cases_msg, sizeof(struct modified_cases_msg));
+
+    //         for(int i=0; i<sizeof(caseholder); i++){
+    //             printf("%02x", buf_caseholder[i]);
+    //        }    
+    // printf("bufcaseholder\n");
+
+    //         //diffusion de modified grid
+
+    //         //1er  send
+    //         s = sendto(sock_multi, buf_modified_cases_msg,sizeof(struct modified_cases_msg), 0, (struct sockaddr*)&gradr, sizeof(gradr));
+    //         if (s < 0)
+    //             perror("erreur send !!!");
+
+    //         num_msg++;
+    //         num_msg = num_msg%8192; //2^13
+
+
+    //         //2eme send 
+    //         s = sendto(sock_multi, buf_caseholder,sizeof(caseholder), 0, (struct sockaddr*)&gradr, sizeof(gradr));
+    //         if (s < 0)
+    //             perror("erreur send !!!");
+            
+    //         free_caseholder(caseholder);
+
+    //         }
+
+             empty_list_msg(list_of_msg);
+             free(modified_cases_msg);
+        }
+         //if(cpt_sec >= 1000000){ 
+           if(cpt_sec >= freq){ 
+            //printf("coucou\n");
+            cpt_sec = 0;
+            //diffusion full grid msg
+            req = full_grid_req(board, num_msg);
+            num_msg++;
+            num_msg = num_msg%8192; //2^13
+
+            memcpy(buffer,req,sizeof(full_grid_msg));
+        //     for(int i=0; i<sizeof(full_grid_msg); i++){
+        // printf("%02x", buffer[i]);
+        // }    
+
+        //printf("\n");
+
+            s = sendto(sock_multi, buffer,sizeof(full_grid_msg), 0, (struct sockaddr*)&gradr, sizeof(gradr));
+            if (s < 0)
+                perror("erreur send !!!");
+
+            memset(buffer, 0, sizeof(full_grid_msg));
+            free(req); 
+        }
+
+        cpt_freq+=tick;
+        cpt_sec+=tick;
+        if(maj_bomb(list,tick,board, &death)) break; //rempli le tableau de bool death[4] pour capter si des joueurs mort ou non
+        usleep(tick);
+      }
+
+
     }
+
+    // while(1){
+
+    //     //serveur doit recevoir les requetes des clients et renvoyer toutes les freq sec les modified case
+    //     //et toute les seconde des full_grid
+
+    //     //garder un tick et faire un usleep tout les tick sec (correspond freq)
+    //     //et garder un compteur pour savoir le nb de sec et quand 0 atteint multidiffuser
+    //     //la grille
+
+    // printf("reception requete client partie...\n");
+    // int r = recvfrom(sock_udp_recv, buf_recv, sizeof(message_partie_client), 0,NULL, NULL);
+    // if(r<0){
+    //     perror(" recvfrom serveur udp erreur");
+    // }
+    // printf("requete client partie recu\n");
+
+    //     for(int i=0; i<sizeof(message_partie_client); i++){
+    //     printf("%02x", buf_recv[i]);
+    // }    
+
+    // printf("\n");
+
+    // memcpy(msg_partie, buf_recv, sizeof(message_partie_client));
+
+    // memset(buf_recv, 0, sizeof(message_partie_client));
+
+    // //mettre a jour la pos du joueur d'id 
+
+
+    // //envoie d'une nouvelle full grid msg apres modif de la premiere
+    // int id = ntohs(msg_partie->CODEREQ_ID_EQ) >> 13 & 0b11;
+    // printf("requete de : %d, ma pos x: %d, y:%d\n", id, p.joueurs[id]->pos->x,p.joueurs[id]->pos->y);
+
+    // req =from_clientreq_tofullgridreq(board,msg_partie, num_msg, p.joueurs[id]->pos, list);  //maj le board avant
+    // memcpy(buffer,req,sizeof(full_grid_msg));
+
+    //         for(int i=0; i<sizeof(full_grid_msg); i++){
+    //     printf("%02x", buffer[i]);
+    // }    
+
+    // printf("\n");
+
+    // s = sendto(sock_multi, buffer, sizeof(full_grid_msg), 0, (struct sockaddr*)&gradr, sizeof(gradr));
+    // if (s < 0)
+    //     perror("erreur send !!!");
+
+    // num_msg++;
+    // num_msg = num_msg%8192; //2^13
+
+    //     free(req);
+    //     memset(msg_partie, 0, sizeof(message_partie_client));
+    //     memset(buffer, 0, sizeof(full_grid_msg));
+    // }
 
 
     free(req);
@@ -226,6 +386,8 @@ void *serve_partie(void * arg) { // fonction pour le thread de partie
     free(buffer);
     buffer = NULL;
     free_board(board);
+    empty_list(list);
+    free(pfds);
 
     //associer a tous les joueurs leurs positions FAIT
     //+ faire en sorte que l'ecran ncurses s'affiche pour les joueurs et qu'ils jouent bien leurs joueurs 

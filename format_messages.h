@@ -66,6 +66,14 @@ typedef struct modified_cases_msg{
     // taille nb
 } modified_cases_msg;
 
+typedef struct CASES{
+
+uint16_t xy;
+uint8_t action;
+
+}CASES;
+
+
 
 /* le tchat */
 

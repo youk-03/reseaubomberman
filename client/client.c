@@ -391,6 +391,7 @@ int main(int argc, char *argv[]) {
     modified_cases_msg *modified_msg_recv = malloc(sizeof(modified_cases_msg));
     u_int16_t codereq = 0;
 
+
     //version avec poll
     int fd_size = 2;
     struct pollfd *pfds = malloc(sizeof(*pfds) * fd_size);
@@ -400,6 +401,9 @@ int main(int argc, char *argv[]) {
     pfds[1].events = POLLIN;
     pfds[0].events = POLLOUT;
     int poll_cpt = 0;
+
+    modified_cases_msg modified_c_msg;
+    memset(&modified_c_msg, 0, sizeof(modified_c_msg));
     
   
 
@@ -422,6 +426,7 @@ int main(int argc, char *argv[]) {
       }
 
         if(pfds[1].revents & POLLIN){
+          //dprintf(2,"reception\n");
 
           //reception donnee de grille
           //recuperation des 12 premier octets pour connaitre la val de codereq et savoir si c'est full ou pas
@@ -435,23 +440,53 @@ int main(int argc, char *argv[]) {
               break;
             }
             memcpy(msg_recv, buf_recv, sizeof(full_grid_msg));
+            //printf("%d\n", ntohs(msg_recv->CODEREQ_ID_EQ) & 0b1111111111111);
 
             if((ntohs(msg_recv->CODEREQ_ID_EQ) & 0b1111111111111) == 11){ //full_grid
+            //printf("full_grid\n");
 
 
               maj_grid(msg_recv,board); //passage de req vers la grid pour l'affichage
               memset(msg_recv, 0, sizeof(full_grid_msg));
 
             }
-            else if(codereq == 12){//modified_grid
+            else if((ntohs(msg_recv->CODEREQ_ID_EQ) & 0b1111111111111) == 12){//modified_grid
+            printf("modified_grid\n");
+          //   memcpy(&modified_c_msg, msg_recv, sizeof(modified_cases_msg));
+          //   int len = modified_c_msg.NB;
+          //   caseholder *caseholder = create_list_caseholder(len);
+          //   char buf_caseholder[sizeof(caseholder)];
+          //   memset(buf_caseholder, 0, sizeof(caseholder));
+
+          //         dprintf(2,"bufcaseholder avant\n");
+
+          //   if ((multicast_recu = recvfrom(*sock_mdiff, buf_caseholder, sizeof(caseholder), 0, NULL, NULL)) < 0){
+          //     perror("erreur de recvfrom");
+          //     exit(-1);
+          //   }
+          //   if(multicast_recu == 0){
+          //     break;
+          //   }
+          //     for(int i=0; i<sizeof(caseholder); i++){
+          //       dprintf(2,"%02x", buf_caseholder[i]);
+          //  }    
+          //       dprintf(2,"bufcaseholder\n");
+
+
+          //   memcpy(caseholder, buf_caseholder, sizeof(caseholder));
+          //   dprintf(2,"bufcaseholder1\n");
+          //   maj_grid_cases(caseholder, board);
+          //   dprintf(2,"bufcaseholder2\n");
+
+          //   free_caseholder(caseholder);
+          //   dprintf(2,"bufcaseholder3\n");
+
+            //recvfrom dans buffer puis memcpy dans case[len] puis maj board par rapport a ca
 
             }
-            
-
-
-            refresh_game(board,NULL); //affiche board
-
-
+          
+          
+           refresh_game(board,NULL); //affiche board
 
         }
         else if(pfds[0].revents & POLLOUT){
