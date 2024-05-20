@@ -24,7 +24,6 @@
 int receive_message(int sock, line * l) { // retourne 2 en cas de fin de partie 
 
   message_tchat * mess = malloc(sizeof(message_tchat));
-  
   if (mess == NULL) {
     perror( "erreur de malloc");
     return 1 ;
@@ -32,7 +31,6 @@ int receive_message(int sock, line * l) { // retourne 2 en cas de fin de partie
   char buf [3];
   memset(mess,0,sizeof(message_tchat));
   memset(buf, 0, sizeof(buf));
-
 
   int recu = 0;
   while(recu<2) { 
@@ -80,13 +78,13 @@ int receive_message(int sock, line * l) { // retourne 2 en cas de fin de partie
       }
       recu += r;
   }
-  
+
   uint8_t  * longueur = (uint8_t *) buf;
   uint8_t val_longueur = *longueur;
   char buf_data[val_longueur+1];
   memset(buf_data, 0, val_longueur+1);
 
-  
+
   // on reçoit la data
   recu = 0;
   while(recu<val_longueur) { 
@@ -97,6 +95,7 @@ int receive_message(int sock, line * l) { // retourne 2 en cas de fin de partie
       }
       recu += r;
   }
+
   print_message(id,buf_data,l);
   //printf("message tchat : %s\n",buf_data);
   free(mess);
@@ -364,6 +363,8 @@ full_grid_msg* send_req(int mode_input, info_joueur* info_joueur, int *sock_udp,
     }
     // lecture de multidiffusion
 
+
+
     char *buf_recv= malloc(sizeof(full_grid_msg)); //faire d'abord un recv des premier octets pour savoir si c'est une full_grid_msg ou l'autre ?
     full_grid_msg *msg = malloc(sizeof(full_grid_msg)); 
 
@@ -377,22 +378,6 @@ full_grid_msg* send_req(int mode_input, info_joueur* info_joueur, int *sock_udp,
       perror("erreur de recvfrom");
       return NULL;
     }
-    //printf("reçu en multidiffusion  : %s\n", buf);
-    if(info_joueur->id==0){
-    send_message(sock_tcp,info_joueur,"test message tchat",7);
-    }
-
-    if(info_joueur->id!=0)
-    receive_message(sock_tcp, NULL);
-
-    if(info_joueur->id==1){
-    send_message(sock_tcp,info_joueur,"deuxieme",7);
-    }
-
-        if(info_joueur->id!=1)
-    receive_message(sock_tcp, NULL);
-
-
 
     free(serv_msg);
     free(start_msg);
@@ -450,6 +435,7 @@ int main(int argc, char *argv[]) {
   memset(serv_addr, 0, sizeof(struct sockaddr_in6));
 
   full_grid_msg* init_grid = send_req(atoi(argv[1]), info_joueur, sock_udp, sock_mdiff, serv_addr, sock_tcp);
+
   if(!init_grid){
     dprintf(2,"erreur lors de l'envoi de requete exit");
     close(*sock_mdiff);
