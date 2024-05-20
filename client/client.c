@@ -21,7 +21,7 @@
 //   //todo: bouger dans une autre méthode
 
 //   //réception des premiers champs
-int receive_message(int sock) {
+int receive_message(int sock, line * l) {
 
   message_tchat * mess = malloc(sizeof(message_tchat));
   char buf [3];
@@ -47,7 +47,7 @@ int receive_message(int sock) {
   // on vérifie les champs
   uint16_t codereq_id_eq = ntohs(mess->CODEREQ_ID_EQ);
   uint16_t codereq = codereq_id_eq & 0b1111111111111; // pour lire 13 bits
-  //uint16_t id = ( codereq_id_eq >>13) & 0b11; //
+  uint16_t id = ( codereq_id_eq >>13) & 0b11; //
   if (codereq == 15 || codereq == 16) {
     puts("fin de partie");
   }
@@ -67,6 +67,7 @@ int receive_message(int sock) {
       }
       recu += r;
   }
+  print_message(id,buf_data,l);
   //printf("message tchat : %s\n",buf_data);
   free(mess);
 // while(1){};
@@ -478,13 +479,15 @@ int main(int argc, char *argv[]) {
 
 
     //version avec poll
-    int fd_size = 2;
+    int fd_size = 3;
     struct pollfd *pfds = malloc(sizeof(*pfds) * fd_size);
     memset(pfds, 0, sizeof(*pfds) * fd_size);
     pfds[0].fd = *sock_udp;
     pfds[1].fd = *sock_mdiff;
+    pfds[2].fd = sock_tcp;
     pfds[1].events = POLLIN;
     pfds[0].events = POLLOUT;
+    pfds[2].events = POLLIN;
     int poll_cpt = 0;
 
     modified_cases_msg modified_c_msg;
@@ -616,6 +619,9 @@ int main(int argc, char *argv[]) {
               break;
             }
 
+        }
+        if (pfds[2].revents & POLLIN) {
+          receive_message(sock_tcp, l);
         }
       
 
