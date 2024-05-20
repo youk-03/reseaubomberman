@@ -395,6 +395,7 @@ ACTION control(line* l) { //Reecrire cette fonc mais de maniere à faire une req
         }
         prev_c = c;
     }
+    char buf[100];
     ACTION a = NONE;
     switch (prev_c) {
         case ERR: break;
@@ -416,7 +417,19 @@ ACTION control(line* l) { //Reecrire cette fonc mais de maniere à faire une req
         case KEY_BACKSPACE:
             if (l->cursor > 0) l->cursor--;
             break;
+        case '%' : // envoyer un message
+            // il faut récupérer la data (de 0 à cursor) puis appeler la fonction send_message dans client
+            memcpy(buf, l->data, l->cursor);
+            l->cursor = 0;
+            break;
+        case '#' : // recevoir un message (juste pour tester)
+            print_message(0,"test",l);
+            break;
         default:
+            if (l->clean) {
+                l->cursor = 0;
+                l->clean = 0;
+            }
             if (prev_c >= ' ' && prev_c <= '~' && l->cursor < TEXT_SIZE)
                 l->data[(l->cursor)++] = prev_c;
             break;
@@ -469,7 +482,15 @@ bool perform_action(board* b, pos* p, ACTION a,bomblist *list, int character) {/
     return false;
 }
 
-
+void print_message (int id, char * s, line * l){
+    l->cursor = 0;
+    char text [TEXT_SIZE];
+    sprintf(text, "joueur %d : %s",id, s);
+    for (int i=0; i<strlen(text);i++){
+        l->data[(l->cursor)++] = text[i];
+    }
+    l->clean = 1;
+}
 
 
 // int main()

@@ -18,6 +18,7 @@ typedef struct board {
 typedef struct line {
     char data[TEXT_SIZE];
     int cursor;
+    int clean; // pour savoir si il faut vider la ligne la prochaine fois qu'on écrit
 } line;
 
 typedef struct pos {
@@ -55,6 +56,7 @@ void setbomb(board* b, pos* p, bomblist *list);
 void refresh_game(board* b, line* l);
 ACTION control(line* l);
 bool perform_action(board* b, pos* p, ACTION a,bomblist *list, int character);
+void print_message (int id, char * s, line *l);
 
 
 #endif

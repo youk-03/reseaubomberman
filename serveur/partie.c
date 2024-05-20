@@ -241,6 +241,7 @@ void *serve_partie(void * arg) { // fonction pour le thread de partie
     caseholder *caseholder;
 
     int sock_udp_recv = socket(AF_INET6, SOCK_DGRAM, 0);
+    ajoute_client(sock_udp_recv);
     struct sockaddr_in6 serv_udp_addr;
     serv_udp_addr.sin6_addr = in6addr_any;
     serv_udp_addr.sin6_family = AF_INET6;
