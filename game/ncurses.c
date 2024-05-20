@@ -384,7 +384,7 @@ void refresh_game(board* b, line* l) {
     refresh(); // Apply the changes to the terminal
 }
 
-ACTION control(line* l) { //Reecrire cette fonc mais de maniere à faire une requete à envoyer au serveur
+ACTION control(line* l, int sock_tcp, info_joueur * info_joueur) { //Reecrire cette fonc mais de maniere à faire une requete à envoyer au serveur
     int c;
     int prev_c = ERR;
     // We consume all similar consecutive key presses
@@ -420,6 +420,7 @@ ACTION control(line* l) { //Reecrire cette fonc mais de maniere à faire une req
         case '%' : // envoyer un message
             // il faut récupérer la data (de 0 à cursor) puis appeler la fonction send_message dans client
             memcpy(buf, l->data, l->cursor);
+            send_message(sock_tcp,info_joueur, buf, 7); // à changer pour le mode en équipe
             l->cursor = 0;
             break;
         case '#' : // recevoir un message (juste pour tester)

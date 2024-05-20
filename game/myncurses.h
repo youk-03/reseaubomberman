@@ -2,12 +2,18 @@
 #ifndef NCURSES_H
 #define NCURSES_H
 
+
 #define TEXT_SIZE 255
 #define GRID_SIZE 1275
 
 typedef enum ACTION { NONE, UP, DOWN, LEFT, RIGHT, PBOMB, QUIT } ACTION;
 typedef enum OBJECT {CHARACTER, CHARACTER2, CHARACTER3, CHARACTER4,EMPTY, BOMB, WALL, BWALL,EXPLODE} OBJECT; //breakable wall = wall - //character1 - 4 not implemented yet
 
+typedef struct info_joueur {
+    int mode ;
+    int id ;
+    int team ; 
+} info_joueur ;
 
 typedef struct board {
     char* grid;
@@ -54,7 +60,7 @@ int get_grid(board* b, int x, int y);
 void set_grid(board* b, int x, int y, int v);
 void setbomb(board* b, pos* p, bomblist *list);
 void refresh_game(board* b, line* l);
-ACTION control(line* l);
+ACTION control(line* l, int sock_tcp, info_joueur * info_joueur);
 bool perform_action(board* b, pos* p, ACTION a,bomblist *list, int character);
 void print_message (int id, char * s, line *l);
 

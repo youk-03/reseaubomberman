@@ -17,67 +17,6 @@
 #define ADDR  "::1" //"fdc7:9dd5:2c66:be86:7e57:58ff:fe68:b249" // c'est l'adresse du serveur
 #define BUF_SIZE 256
 
-int send_message(int sock,info_joueur * info_joueur, char * message, int dest) {
-
-  //int size = 3;
-  message_tchat * mess = malloc(sizeof(message_tchat));
-
-  if (mess==NULL) {
-    return 1 ;
-  }
-  memset(mess,0,sizeof(message_tchat));
-  if (info_joueur->mode == 3 && dest == 8 ) {
-    perror("pas de coéquipier, impossible d'envoyer le message");
-  }
-
-
-  mess->CODEREQ_ID_EQ=htons((info_joueur->team << 15) | (info_joueur->id << 13) | (dest));
-  //printf("%d\n", mess->CODEREQ_ID_EQ);
-  mess->LEN=(uint8_t)(strlen(message)); // + 1?
-  int size = 3 + strlen(message);
-  char buf [size];//malloc(sizeof(message_tchat))  ; //16 pour codereq_id_eq, 8 pour len
-  memset(buf, 0, size);
-  memcpy(buf,mess,3);
-
-
-  memcpy(buf+3,message,strlen(message)*sizeof(char));
-  //envoi de la première partie
-
-  //printf("contenu buffer : %s, size %d \n",buf,size);
-
-
-  int sent = 0 ;
-  while(sent<size) {
-    int s=send(sock,buf+sent,size-sent,0) ; 
-    if (s == -1) {
-      perror("erreur envoi") ;
-      return 1 ;
-    } 
-    sent+=s;
-  } 
-
-
-  //printf("taille msg %ld\n",sizeof(buf));
-  //printf("envoye : %d \n",sent);
-      
-
-  // envoi du message 
-
-
-
-  //char data [1+mess->LEN];
-  //memcpy(buf,message,strlen(message)*sizeof(char));
-
-//   sent=0 ;
-
- // printf("contenu buffer : %s, size %d \n",buf,size);
-
-  
-
-  //printf("message envoyé\n");
-  free(mess);
-  return 0;
-}
 
 //   //todo: bouger dans une autre méthode
 
@@ -164,7 +103,7 @@ int communicate_tchat(int sock) {
 unsigned int num_msg = 0;
 
 
-full_grid_msg* send_req(int mode_input, info_joueur* info_joueur, int *sock_udp, int *sock_mdiff, struct sockaddr_in6 *addr_udp) { //ALLOUER LES POINTEURS AVANT DE LES PASSER
+full_grid_msg* send_req(int mode_input, info_joueur* info_joueur, int *sock_udp, int *sock_mdiff, struct sockaddr_in6 *addr_udp, int sock_tcp) { //ALLOUER LES POINTEURS AVANT DE LES PASSER
 
   if (info_joueur == NULL) {
     perror("erreur de malloc");
@@ -175,29 +114,7 @@ full_grid_msg* send_req(int mode_input, info_joueur* info_joueur, int *sock_udp,
 
     /*Initialisations pour les communications en TCP*/
 
-    int sock_tcp = socket(PF_INET6, SOCK_STREAM, 0);
-    if (sock_tcp == -1) {
-      perror ("erreur creation socket tcp client");
-      return NULL ;
-    }
-
-    int conv ;
-    struct sockaddr_in6 address_sock_tcp;
-    memset(&address_sock_tcp, 0,sizeof(address_sock_tcp));
-    address_sock_tcp.sin6_family = AF_INET6;
-    address_sock_tcp.sin6_port = htons(PORT_TCP);
-    conv = inet_pton(AF_INET6, ADDR, &address_sock_tcp.sin6_addr);
-    if (conv != 1) {
-      perror("erreur conversion adresse tcp");
-    }
-
-    int c = connect(sock_tcp, (struct sockaddr *) &address_sock_tcp, sizeof(address_sock_tcp)); 
-    if (c == -1) {
-      perror("erreur connexion tcp");
-      close(sock_tcp);
-      return NULL ;
-    }
-
+   
     /*envoi de la première requête */
 
     message_debut_client * start_msg = malloc(sizeof(message_debut_client)); 
@@ -444,10 +361,6 @@ full_grid_msg* send_req(int mode_input, info_joueur* info_joueur, int *sock_udp,
     free(serialized_msg);
     free(serialized_serv_msg);
     free(serialized_ready_msg);
-
-    close(sock_tcp);
-    close(sock_mdiff);
-    close(sock_udp);
   
 
 
@@ -466,6 +379,28 @@ int main(int argc, char *argv[]) {
     puts ("argument invalide");
     exit(0) ; 
   }
+
+  int sock_tcp = socket(PF_INET6, SOCK_STREAM, 0);
+  if (sock_tcp == -1) {
+    perror ("erreur creation socket tcp client");
+    return NULL ;
+  }
+  int conv ;
+  struct sockaddr_in6 address_sock_tcp;
+  memset(&address_sock_tcp, 0,sizeof(address_sock_tcp));
+  address_sock_tcp.sin6_family = AF_INET6;
+  address_sock_tcp.sin6_port = htons(PORT_TCP);
+  conv = inet_pton(AF_INET6, ADDR, &address_sock_tcp.sin6_addr);
+  if (conv != 1) {
+    perror("erreur conversion adresse tcp");
+  }
+
+  int c = connect(sock_tcp, (struct sockaddr *) &address_sock_tcp, sizeof(address_sock_tcp)); 
+  if (c == -1) {
+    perror("erreur connexion tcp");
+    close(sock_tcp);
+      return NULL ;
+  }
   //stock info du joueur (id etc)
   info_joueur * info_joueur = malloc(sizeof(info_joueur));
 
@@ -474,7 +409,7 @@ int main(int argc, char *argv[]) {
   struct sockaddr_in6 *serv_addr = malloc(sizeof(struct sockaddr_in6));
   memset(serv_addr, 0, sizeof(struct sockaddr_in6));
 
-  full_grid_msg* init_grid = send_req(atoi(argv[1]), info_joueur, sock_udp, sock_mdiff, serv_addr);
+  full_grid_msg* init_grid = send_req(atoi(argv[1]), info_joueur, sock_udp, sock_mdiff, serv_addr, sock_tcp);
   if(!init_grid){
     dprintf(2,"erreur lors de l'envoi de requete exit");
     close(*sock_mdiff);
@@ -560,7 +495,7 @@ int main(int argc, char *argv[]) {
 
     while(true){
 
-      ACTION a = control(l);
+      ACTION a = control(l, sock_tcp, info_joueur);
 
       poll_cpt = poll(pfds, fd_size,0);
 
