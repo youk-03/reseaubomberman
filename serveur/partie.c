@@ -140,9 +140,18 @@ void *serve_partie(void * arg) { // fonction pour le thread de partie
     unsigned int cpt_sec = 0;
     unsigned int freq = 30*1000;
 
-    bool death[4] = {false};
+    bool death[4];
+    death[0] = false;
+    death[1] = false;
+    death[2] = false;
+    death[3] = false;
 
-    //int tick = 30*1000;
+    bool send[4];
+    send[0] = false;
+    send[1] = false;
+    send[2] = false;
+    send[3] = false;
+
     bomblist *list =create_list(10);
 
     while(!partie_prete(p)){
@@ -174,7 +183,7 @@ void *serve_partie(void * arg) { // fonction pour le thread de partie
     //ajout des joueurs sur la grille
     set_grid(board,1,1,CHARACTER); //joueur1
     set_grid(board,board->w-1,1,CHARACTER2); //joueur2 
-    set_grid(board,1,board->h-1,CHARACTER3); //joueur3
+    set_grid(board,2,board->h-1,CHARACTER3); //joueur3
     set_grid(board,board->w-1,board->h-1,CHARACTER4); //joueur4
 
     //position des joueurs initiales
@@ -305,7 +314,7 @@ void *serve_partie(void * arg) { // fonction pour le thread de partie
         if(cpt_freq >= freq){
              cpt_freq = 0;
 
-             modified_cases_msg = maj_board(list_of_msg,list,&p,num_msg, &death); //board modified
+             modified_cases_msg = maj_board(list_of_msg,list,&p,num_msg, death); //board modified
 
     //         caseholder = get_difference(board_diff,board);
     //        //memcpy(board_diff, board, sizeof(board));
@@ -379,7 +388,34 @@ void *serve_partie(void * arg) { // fonction pour le thread de partie
 
         cpt_freq+=tick;
         cpt_sec+=tick;
-        if(maj_bomb(list,tick,board, &death)) break; //rempli le tableau de bool death[4] pour capter si des joueurs mort ou non
+        if(maj_bomb(list,tick,board, death)){
+            for(int i=0; i<4; i++){
+                if(death[i]){
+                    //envoie message de mort
+                    memset(buffer,0,sizeof(full_grid_msg));
+                    req = full_grid_dead(17+i);
+                    memcpy(buffer,req,sizeof(full_grid_msg));
+                    s = sendto(sock_multi, buffer,sizeof(full_grid_msg), 0, (struct sockaddr*)&gradr, sizeof(gradr));
+                    if (s < 0) perror("erreur send !!!");
+
+                    memset(buffer, 0, sizeof(full_grid_msg));
+                    free(req); 
+                }
+            }
+            switch(is_finished(&p, death)){
+                case -1: break; //pas fini
+                case 0:printf("0 a gagné\n"); break;
+                case 1:printf("1 a gagné\n"); break;
+                case 2:printf("2 a gagné\n"); break;
+                case 3:printf("3 a gagné\n"); break;
+                case 4:printf("team 1-3 a gagné\n"); break;
+                case 5:printf("team 0-2 a gagné\n"); break;
+            }
+            if(is_finished(&p, death)>=0) {
+                printf(" partie finie\n");
+                break;
+            }
+        }  //rempli le tableau de bool death[4] pour capter si des joueurs mort ou non
         usleep(tick);
       }
 
@@ -441,8 +477,8 @@ void *serve_partie(void * arg) { // fonction pour le thread de partie
     // }
 
 
-    free(req);
-    req= NULL;
+    //free(req);
+    //req= NULL;
     free(buffer);
     buffer = NULL;
     free_board(board);

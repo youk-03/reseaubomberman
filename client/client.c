@@ -32,7 +32,7 @@ int send_message(int sock,info_joueur * info_joueur, char * message, int dest) {
 
 
   mess->CODEREQ_ID_EQ=htons((info_joueur->team << 15) | (info_joueur->id << 13) | (dest));
-  printf("%d\n", mess->CODEREQ_ID_EQ);
+  //printf("%d\n", mess->CODEREQ_ID_EQ);
   mess->LEN=(uint8_t)(strlen(message)); // + 1?
   int size = 3 + strlen(message);
   char buf [size];//malloc(sizeof(message_tchat))  ; //16 pour codereq_id_eq, 8 pour len
@@ -445,9 +445,9 @@ full_grid_msg* send_req(int mode_input, info_joueur* info_joueur, int *sock_udp,
     free(serialized_serv_msg);
     free(serialized_ready_msg);
 
-    close(sock_tcp);
-    close(sock_mdiff);
-    close(sock_udp);
+    //close(sock_tcp);
+    //close(*sock_mdiff);
+    //close(*sock_udp);
   
 
 
@@ -495,13 +495,13 @@ int main(int argc, char *argv[]) {
 
   //initialise sa pos en fonction de qui il est 
   switch(id_joueur){
-    case 0: pos->x = 1; pos->y = 1; break;//joueur 1
+    case 0: pos->x = 2; pos->y = 1; break;//joueur 1
     case 1: pos->x = board->w-1; pos->y = 1; break;//joueur 2
-    case 2: pos->x = 1; pos->y = board->h-1; break;//joueur 3
+    case 2: pos->x = 2; pos->y = board->h-1; break;//joueur 3
     case 3: pos->x = board->w-1; pos->y = board->h-1; break;//joueur 4
   }
 
-  dprintf(2,"je suis id %d, ma position : x: %d, y: %d\n",id_joueur, pos->x, pos->y);
+  //dprintf(2,"je suis id %d, ma position : x: %d, y: %d\n",id_joueur, pos->x, pos->y);
 
   maj_grid(init_grid,board); //passage de req vers la grid pour l'affichage
 
@@ -570,7 +570,7 @@ int main(int argc, char *argv[]) {
       }
 
       if(poll_cpt == 0){
-        dprintf(2,"r to do wtf\n");
+        dprintf(2,"nothing to do \n");
         continue;
       }
 
@@ -600,7 +600,7 @@ int main(int argc, char *argv[]) {
 
             }
             else if((ntohs(msg_recv->CODEREQ_ID_EQ) & 0b1111111111111) == 12){//modified_grid
-            printf("modified_grid\n");
+            //printf("modified_grid\n");
           //   memcpy(&modified_c_msg, msg_recv, sizeof(modified_cases_msg));
           //   int len = modified_c_msg.NB;
           //   caseholder *caseholder = create_list_caseholder(len);
@@ -633,6 +633,20 @@ int main(int argc, char *argv[]) {
             //recvfrom dans buffer puis memcpy dans case[len] puis maj board par rapport a ca
 
             }
+            else{
+              //cas codereq >= 17 donc mort d'un joueur
+              codereq = ntohs(msg_recv->CODEREQ_ID_EQ) & 0b1111111111111;
+              if(codereq == id_joueur + 17){
+                    //close(*sock_mdiff);
+                    if(sock_udp != NULL){
+                    close(*sock_udp);
+                    free(sock_udp);
+                    sock_udp = NULL;
+                    }
+                    //free(sock_mdiff);
+                    printf("gameover\n");
+              }
+            }
           
           
            refresh_game(board,NULL); //affiche board
@@ -651,10 +665,10 @@ int main(int argc, char *argv[]) {
 
               //PRINT POUR DEBUG
 
-              for(int i=0; i<sizeof(message_partie_client); i++){
-                dprintf(2,"%02x", buf_send[i]);
-              }          
-              dprintf(2,"\n");
+              // for(int i=0; i<sizeof(message_partie_client); i++){
+              //   dprintf(2,"%02x", buf_send[i]);
+              // }          
+              // dprintf(2,"\n");
 
               //PRINT POUR DEBUG FIN
 
@@ -769,9 +783,11 @@ int main(int argc, char *argv[]) {
     // }
 
     free(init_grid);
-    close(*sock_mdiff);
+    if(sock_udp != NULL){
     close(*sock_udp);
     free(sock_udp);
+    }
+    close(*sock_mdiff);
     free(sock_mdiff);
     free(buf_send);
     free(info_joueur);

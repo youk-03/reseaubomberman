@@ -231,6 +231,15 @@ full_grid_msg* full_grid_req (board *b, unsigned int num){
     return res;
 }
 
+full_grid_msg* full_grid_dead(uint16_t dead){
+    full_grid_msg *res = malloc(sizeof(full_grid_msg));
+    memset(res,0,sizeof(full_grid_msg));
+    res->CODEREQ_ID_EQ = htons(dead);
+
+    return res;
+
+}
+
 int from_gtor(int c){
     int casei = -1;
 
@@ -353,7 +362,7 @@ caseholder* get_difference(board *old, board *new){
 
 }
 
-modified_cases_msg* maj_board(message_partie_client_liste* list, bomblist *bomblist, partie *p, unsigned int num, bool **death){
+modified_cases_msg* maj_board(message_partie_client_liste* list, bomblist *bomblist, partie *p, unsigned int num, bool death[4]){
 
     board *board = p->board;
     message_partie_client* req_j1[2]; //0 requete de deplacement ou quitter le jeu //1 requete de bombe
@@ -492,6 +501,38 @@ modified_cases_msg* maj_board(message_partie_client_liste* list, bomblist *bombl
     //empty_list_msg(list);
 
 }
+
+int is_finished (partie *p, bool death[4]){//3-1 vs 0-2 //return id joueur si is finished en mode hors team -1 si pas fini (dans tout les cas)
+    int once = 0;          
+    int id=-1;                //4 si team 1-3 gagne 5 si team 0-2 gagne
+    if(p->equipes == 1){ //en equipe
+        if(death[0] && death[2]){
+            return 4;
+        }
+        if(death[1] && death[3]){
+            return 5;
+
+        }
+    }
+    else{
+
+        for(int i=0; i<4; i++){
+            if(!death[i]){
+                once++;
+                id=i;
+            }
+        }
+
+        if (once == 1){
+            return id;
+        }
+
+    }
+
+    return -1;
+}
+
+
 
 void from_clientreq_toboard(board *board, message_partie_client *msg, pos* pos, bomblist *bomblist ){
     if(msg == NULL){

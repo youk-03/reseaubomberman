@@ -104,20 +104,33 @@ void free_bomb(bomb * b){
     free(b); 
 }
 
-bool bomb_explode(bomb* bomb, board *board, bomblist *list, OBJECT obj, bool **death){//true si character meurt
-    //CHANGER TOUT LES CHARACTER POUR REGARDER SI UNE VAL ENTRE 0 ET 3 (donc un char) ET PEUT ETRE STOCKER CA EN ARG OU LE RETURN POUR SAVOIR QUI EST MORT OU NON
-    //char value 0 - 3 inluded
+
+bool bomb_explode(bomb* bomb, board *board, bomblist *list, OBJECT obj, bool death[4]){
     pos *p = bomb->bpos;
     bool res= false;
+    int width = board->w;
+    int height = board->h;
     //x+2 reminder footstep size 2
-    //TESER SI LES POSITIONS PAS EN DEHORS DE LA GRILLE
+  
+    if(p->x+2 < width && p->x+2 > 0){
     if(get_grid(board,p->x+2,p->y) != WALL){
         //delete
-        if(get_grid(board,p->x+2,p->y) <= CHARACTER4) res = true;
+        if(get_grid(board,p->x+2,p->y) <= CHARACTER4){ 
+            
+            death[get_grid(board,p->x+2,p->y)] = true;
+            res = true;
+
+        }
+
         if(get_grid(board,p->x+2,p->y) != BWALL && get_grid(board,p->x+2,p->y) != WALL ){
             //continu casser niveau 2
             if(get_grid(board,p->x+4,p->y) != WALL){
-                if(get_grid(board,p->x+4,p->y) <= CHARACTER4) res = true; //changer ce cas
+                if(get_grid(board,p->x+4,p->y) <= CHARACTER4){ 
+            
+            death[get_grid(board,p->x+4,p->y)] = true;
+            res = true;
+
+        }
                 if(!(res && obj == EXPLODE)){
                 set_grid(board,p->x+4,p->y, obj);//niveau 2
                 }
@@ -127,15 +140,27 @@ bool bomb_explode(bomb* bomb, board *board, bomblist *list, OBJECT obj, bool **d
         set_grid(board,p->x+2,p->y, obj);//niveau 1
         }
     }
+    }
 
     //y+1
+    if(p->y+1 < height && p->y+1 >0){
     if(get_grid(board,p->x,p->y+1) != WALL){
         //delete
-        if(get_grid(board,p->x,p->y+1) <= CHARACTER4) res = true;
+        if(get_grid(board,p->x,p->y+1) <= CHARACTER4){ 
+            
+            death[get_grid(board,p->x,p->y+1)] = true;
+            res = true;
+
+        }
         if(get_grid(board,p->x,p->y+1) != BWALL && get_grid(board,p->x,p->y+1) != WALL){
             //continu casser niveau 2
             if(get_grid(board,p->x,p->y+2) != WALL){
-                if(get_grid(board,p->x,p->y+2) <= CHARACTER4) res = true;
+                if(get_grid(board,p->x,p->y+2) <= CHARACTER4){ 
+            
+                     death[get_grid(board,p->x,p->y+2)] = true;
+                     res = true;
+
+        }
                 if(!(res && obj == EXPLODE)){
                 set_grid(board,p->x,p->y+2, obj);//niveau 2
                 }
@@ -145,15 +170,27 @@ bool bomb_explode(bomb* bomb, board *board, bomblist *list, OBJECT obj, bool **d
         set_grid(board,p->x,p->y+1, obj);//niveau 1
         }
     }
+    }
 
+    if(p->x-2 < width && p->x-2 > 0){
     //x-2 reminder footstep size 2
     if(get_grid(board,p->x-2,p->y) != WALL){
         //delete
-        if(get_grid(board,p->x-2,p->y) <= CHARACTER4) res = true;
+        if(get_grid(board,p->x-2,p->y) <= CHARACTER4){ 
+            
+            death[get_grid(board,p->x-2,p->y)] = true;
+            res = true;
+
+        }
         if(get_grid(board,p->x-2,p->y) != BWALL && get_grid(board,p->x-2,p->y) != WALL){
             //continu casser niveau 2
             if(get_grid(board,p->x-4,p->y) != WALL){
-                if(get_grid(board,p->x-4,p->y) <= CHARACTER4) res = true;
+                if(get_grid(board,p->x-4,p->y) <= CHARACTER4){ 
+            
+            death[get_grid(board,p->x-4,p->y)] = true;
+            res = true;
+
+        }
                 if(!(res && obj == EXPLODE)){
                 set_grid(board,p->x-4,p->y, obj);//niveau 2
                 }
@@ -163,15 +200,27 @@ bool bomb_explode(bomb* bomb, board *board, bomblist *list, OBJECT obj, bool **d
         set_grid(board,p->x-2,p->y, obj);//niveau 1
         }
     }
+    }
 
+    if(p->y-1 < height && p->y-1 > 0){
     //y-1
     if(get_grid(board,p->x,p->y-1) != WALL){
         //delete
-        if(get_grid(board,p->x,p->y-1) <= CHARACTER4) res = true;
+        if(get_grid(board,p->x,p->y-1) <= CHARACTER4){ 
+            
+            death[get_grid(board,p->x,p->y-1)] = true;
+            res = true;
+
+        }
         if(get_grid(board,p->x,p->y-1) != BWALL && get_grid(board,p->x,p->y-1) != WALL){
             //continu casser niveau 2
             if(get_grid(board,p->x,p->y-2) != WALL){
-                if(get_grid(board,p->x,p->y-2) <= CHARACTER4) res = true;
+                if(get_grid(board,p->x,p->y-2) <= CHARACTER4){ 
+            
+                    death[get_grid(board,p->x,p->y-2)] = true;
+                    res = true;
+
+        }
                 if(!(res && obj == EXPLODE)){
                 set_grid(board,p->x,p->y-2, obj);//niveau 2
                 }
@@ -182,37 +231,71 @@ bool bomb_explode(bomb* bomb, board *board, bomblist *list, OBJECT obj, bool **d
         }
     }
 
+    }
+
+
+    if(p->x+2 < width && p->x+2 > 0 && p->y-1 < height && p->y-1 > 0){
     //x+2 y-1 reminder footstep size 2
     if(get_grid(board,p->x+2,p->y-1) != WALL){
         //delete
-        if(get_grid(board,p->x+2,p->y-1) <= CHARACTER4) res = true;
+        if(get_grid(board,p->x+2,p->y-1) <= CHARACTER4){ 
+            
+            death[get_grid(board,p->x+2,p->y-1)] = true;
+            res = true;
+
+        }
         if(!(res && obj == EXPLODE)){
         set_grid(board,p->x+2,p->y-1, obj);//niveau 1
         }
     }
+    }
+
+    if(p->x+2 < width && p->x+2 > 0 && p->y+1 < height && p->y+1 > 0){
     //x+2 y+1
     if(get_grid(board,p->x+2,p->y+1) != WALL){
         //delete
-        if(get_grid(board,p->x+2,p->y+1) <= CHARACTER4) res = true;
+        if(get_grid(board,p->x+2,p->y+1) <= CHARACTER4){ 
+            
+            death[get_grid(board,p->x+2,p->y+1)] = true;
+            res = true;
+
+        }
         if(!(res && obj == EXPLODE)){
         set_grid(board,p->x+2,p->y+1, obj);//niveau 1
         }
     }
+    }
+
+    if(p->x-2 < width && p->x-2 > 0 && p->y-1 < height && p->y-1 > 0){
     //x-2 y-1
     if(get_grid(board,p->x-2,p->y-1) != WALL){
         //delete
-        if(get_grid(board,p->x-2,p->y-1) <= CHARACTER4) res = true;
+        if(get_grid(board,p->x-2,p->y-1) <= CHARACTER4){ 
+            
+            death[get_grid(board,p->x-2,p->y-1)] = true;
+            res = true;
+
+        }
             if(!(res && obj == EXPLODE)){
         set_grid(board,p->x-2,p->y-1, obj);//niveau 1
             }
     }
+
+    }
     //x-2 y+1
+    if(p->x-2 < width && p->x-2 > 0 && p->y+1 < height && p->y+1 > 0){
     if(get_grid(board,p->x-2,p->y+1) != WALL){
         //delete
-        if(get_grid(board,p->x-2,p->y+1) <= CHARACTER4) res = true;
+        if(get_grid(board,p->x-2,p->y+1) <= CHARACTER4){ 
+            
+            death[get_grid(board,p->x-2,p->y+1)] = true;
+            res = true;
+
+        }
         if(!(res && obj == EXPLODE)){
         set_grid(board,p->x-2,p->y+1, obj);//niveau 1
         }
+    }
     }
 
 if(obj == EMPTY){
@@ -223,7 +306,7 @@ if(obj == EMPTY){
 
 } 
 
-bool maj_bomb(bomblist *list, int timepassed, board *board, bool **death){
+bool maj_bomb(bomblist *list, int timepassed, board *board, bool death[4]){
     bomblist *tmp = list;
     bool res = false;
     for(int i=0 ; i<list->length; i++){

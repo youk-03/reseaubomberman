@@ -32,7 +32,9 @@ full_grid_msg* full_grid_req (board *b, unsigned int num);
 modified_cases_msg* modified_grid_req(unsigned int num, uint8_t nb);
 message_partie_client* perform_action_req(board* b, pos* p, ACTION a,bomblist *list, info_joueur *info_joueur, unsigned int num);
 void from_clientreq_toboard(board *board, message_partie_client *msg, pos* pos, bomblist *bomblist);
-modified_cases_msg* maj_board(message_partie_client_liste* list, bomblist *bomblist, partie *p, unsigned int num, bool **death);
+modified_cases_msg* maj_board(message_partie_client_liste* list, bomblist *bomblist, partie *p, unsigned int num, bool death[4]);
+full_grid_msg* full_grid_dead(uint16_t dead);
+int is_finished (partie *p, bool death[4]);
 
 
 caseholder* get_difference(board *old, board *new);
