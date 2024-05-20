@@ -3,6 +3,7 @@
 
 #include "joueur.h"
 
+
 typedef struct partie {
     joueur * joueurs[4]; // les équipes sont faites en fonction de la parité
     int port_multi; // port de multidiffusion
@@ -18,6 +19,11 @@ typedef struct arg_serve{
     int sock;
 } arg_serve;
 
+void ajoute_client(int);
+
+void init_socks();
+
+void termine (int);
 
 joueur * ajoute_joueur(partie **, int);
 

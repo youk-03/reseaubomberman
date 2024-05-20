@@ -18,6 +18,34 @@ pthread_mutex_t verrou_partie = PTHREAD_MUTEX_INITIALIZER; // utiliser pour ajou
 static int port_nb = 24000;
 static int addr_nb = 1;
 
+int socks[100];
+
+void ajoute_client(int c){
+    for (int i=0; i<100; i++){
+        if (socks[i]==-1){
+            socks[i]=c;
+            return;
+        }
+    }
+    printf("Nombre maximum de sockets atteint");
+}
+
+void init_socks(){
+    memset(socks, -1, 100*sizeof(int));
+}
+
+void termine (int sig){
+    printf("interruption du programme\n");
+    for (int i=0; i<100; i++){
+        if(socks[i]>=0) {
+            close(socks[i]);
+            printf("sock %d fermée\n", socks[i]);
+        }
+    }
+    exit(0);
+}
+
+
 joueur * ajoute_joueur(partie ** pp, int sock){ // Peut-être bouger dans un autre fichier
     partie * p = * pp;
     pthread_mutex_lock(&verrou_partie);
@@ -114,6 +142,7 @@ void *serve_partie(void * arg) { // fonction pour le thread de partie
     // socket multidiffusion
     
     int  sock_multi = socket(PF_INET6, SOCK_DGRAM, 0);
+    ajoute_client(sock_multi);
     struct sockaddr_in6 gradr;
     memset(&gradr, 0, sizeof(gradr));
     gradr.sin6_family = AF_INET6;
@@ -127,6 +156,7 @@ void *serve_partie(void * arg) { // fonction pour le thread de partie
     // socket udp (pour recevoir les messages des clients)
 
     int sock_udp = socket(PF_INET6, SOCK_DGRAM, 0);
+    ajoute_client(sock_udp);
     struct sockaddr_in6 adrudp;
     memset(&adrudp, 0, sizeof(gradr));
     adrudp.sin6_family = AF_INET6;
