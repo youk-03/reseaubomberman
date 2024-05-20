@@ -5,7 +5,7 @@
 #include "../game/myncurses.h"
 
 typedef struct joueur{
-    int sock;
+    int sock; // TCP
     int id; // entre 0 et 3
     int pret;
     pos *pos;

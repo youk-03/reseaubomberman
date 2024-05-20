@@ -6,27 +6,16 @@
 #include <arpa/inet.h>
 #include "../format_messages.h"
 #include "../game/myncurses.h"
+#include "auxiliaire.h"
 
-
-typedef struct info_joueur {
-    int mode ;
-    int id ;
-    int team ; 
-} info_joueur ;
-
-typedef struct info_joueur_deroulement {
-    int dest ;
-    int id ;
-    int team ;
-} info_joueur_deroulement;
 
 int join_req(message_debut_client* msg_client, int mode) { //1 si solo, 2 si équipes,à bouger vers un autre fichier
-  msg_client->CODEREQ_IQ_EQ = htons(mode);
+  msg_client->CODEREQ_ID_EQ = htons(mode);
   return 0;
 }
 
 int ready_req(message_debut_client* msg_client, info_joueur * info_joueur) {
-  msg_client->CODEREQ_IQ_EQ = htons((info_joueur->team << 15) | (info_joueur->id << 13) | (info_joueur->mode));
+  msg_client->CODEREQ_ID_EQ = htons((info_joueur->team << 15) | (info_joueur->id << 13) | (info_joueur->mode));
   return 0;
 }
 
@@ -60,15 +49,6 @@ int move_req(message_partie_client * msg_client, info_joueur * info_joueur, ACTI
     return 0;
 }
 
-
-int chat_req(message_tchat_client* msg_client, info_joueur_deroulement * info_joueur_deroulement, char * msg) {
-    memset(msg_client,0,sizeof(message_tchat_client));
-    int len = strlen(msg);
-    msg_client->CODEREQ_ID_EQ = htons((info_joueur_deroulement->team) <<15 | (info_joueur_deroulement->id) << 13 | (info_joueur_deroulement->dest));
-    msg_client->LEN_DATA[0] =( len << 8 | msg[0] ) ;
-    //todo: voir comment remplir le reste
-    return 0 ;
-}
 
 int string_to_struct(message_debut_serveur * serv_msg, char * serialized_serv_msg) { 
   memset(serv_msg, 0, sizeof(message_debut_serveur));
@@ -107,5 +87,7 @@ int info_check(info_joueur * info_joueur, message_debut_serveur * serv_msg ) {
     perror ("erreur réception id");
     return 1 ;
   }
+
+  info_joueur->team= ntohs((serv_msg->CODEREQ_ID_EQ)) >> 13 & 0b1 ;
   return 0;
 }

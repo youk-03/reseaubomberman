@@ -5,6 +5,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+#include <signal.h>
 #include <pthread.h>
 #include "../format_messages.h"
 #include "partie.h"
@@ -17,12 +18,9 @@
 #define SO_REUSEADDR SO_REUSEPORT
 #endif
 
-// Pour compiler : gcc -DMAC serveur.c -o serveur
-
-//////////////////////////////////////////////////////////////////////////////////////////////////
-
 int main(int argc, char *argv[]){
     // *** Recevoir les messages de nouveaux joueurs ***
+    init_socks();
 
     int sock = socket(PF_INET6, SOCK_STREAM, 0);
     if(sock < 0){
@@ -61,8 +59,15 @@ int main(int argc, char *argv[]){
     }
     /* TODO : créer une partie vide puis et faire en sorte qu'on envoie 
     le pointeur vers les parties à compléter dans serve */
-    partie * p4v4 = nouvelle_partie(0);
-    partie * p2v2 = nouvelle_partie(1);
+    partie * p4v4 = nouvelle_partie(0); // free fin de la partie
+    partie * p2v2 = nouvelle_partie(1); // free 
+
+    struct sigaction action;
+    memset(&action, 0, sizeof(struct sigaction));
+    action.sa_handler = termine;
+    if (sigaction(SIGINT, &action, NULL)==-1) {
+        perror("erreur sigaction");
+    }
 
     while(1){
         /*printf("Partie prête : %d \n", partie_prete(* p4v4));
@@ -87,12 +92,13 @@ int main(int argc, char *argv[]){
         struct sockaddr_in6 addrclient;
         socklen_t size=sizeof(addrclient);
     
-        int sock_client = accept(sock, (struct sockaddr *) &addrclient, &size);
+        int sock_client = accept(sock, (struct sockaddr *) &addrclient, &size); // close fin de la partie
+        ajoute_client(sock_client);
 
         if (sock_client >= 0) {
             arg_serve * arg = malloc(sizeof(arg_serve));
-            arg->partie4v4 = p4v4;
-            arg->partie2v2 = p2v2;
+            arg->partie4v4 = &p4v4; // malloc ?
+            arg->partie2v2 = &p2v2;
             arg->sock = sock_client;
 
             pthread_t thread;

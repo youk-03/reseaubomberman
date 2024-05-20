@@ -48,7 +48,7 @@ void *serve(void *arg) { // mettre des limites d'attente sur les recv
 
     //printf("recu : %s\n", buf); // n'affichera pas grand chose 
     memcpy(mess_client,(message_debut_client*)&buf,sizeof(message_debut_client));
-    uint16_t codereq_id_eq = ntohs(mess_client->CODEREQ_IQ_EQ);
+    uint16_t codereq_id_eq = ntohs(mess_client->CODEREQ_ID_EQ);
     uint16_t codereq = codereq_id_eq & 0b1111111111111; // pour lire 13 bits
     // pour récupérer id -> on décalle de 13 dans l'autre sens ( >>13) & 0b11
     printf("codereq: %d \n",codereq);
@@ -61,6 +61,7 @@ void *serve(void *arg) { // mettre des limites d'attente sur les recv
         if (j==NULL){
             printf("Erreur le joueur n'a pas pu être ajouté\n");
             close(sock);
+            free(mess_client);
             free(arg);
             return NULL;
         }
@@ -70,6 +71,7 @@ void *serve(void *arg) { // mettre des limites d'attente sur les recv
         if (j==NULL){
             printf("Erreur le joueur n'a pas pu être ajouté\n");
             close(sock);
+            free(mess_client);
             free(arg);
             return NULL;
         }
@@ -77,6 +79,7 @@ void *serve(void *arg) { // mettre des limites d'attente sur les recv
         printf("Valeur de codereq incorrecte\n");
         close(sock);
         free(arg);
+        free(mess_client);
         return NULL;
     }
    // Remplissage de la struct
@@ -86,17 +89,19 @@ void *serve(void *arg) { // mettre des limites d'attente sur les recv
     if (codereq==1) { // partie 4v4
         // mess->CODEREQ_ID_EQ = htons((13<<j->id)|9); // sens à vérifier
         mess->CODEREQ_ID_EQ = htons((j->id)<<13|9);
-        mess->PORTUDP = htons(a->partie4v4->port);
-        mess->PORTMDIFF = htons(a->partie4v4->port_multi);
-        if (inet_pton(AF_INET6, a->partie4v4->addr_multi, mess->ADRMDIFF )!=1){
+        partie * p4v4 = * (a->partie4v4);
+        mess->PORTUDP = htons(p4v4->port);
+        mess->PORTMDIFF = htons(p4v4->port_multi);
+        if (inet_pton(AF_INET6, p4v4->addr_multi, mess->ADRMDIFF )!=1){
             perror("erreur inet_pton");
         }; // C'est OK ? -> c'est OK !
 
     } else { // partie2v2
         mess->CODEREQ_ID_EQ = htons(((j->id)%2)<<15|(j->id<<13)|10); //j'ai finalement touché au sens du décalage de bits
-        mess->PORTUDP = htons(a->partie2v2->port);
-        mess->PORTMDIFF = htons(a->partie2v2->port_multi);
-        inet_pton(AF_INET6, a->partie2v2->addr_multi, mess->ADRMDIFF ); // C'est OK ?
+        partie * p2v2 = * (a->partie2v2);
+        mess->PORTUDP = htons(p2v2->port);
+        mess->PORTMDIFF = htons(p2v2->port_multi);
+        inet_pton(AF_INET6, p2v2->addr_multi, mess->ADRMDIFF ); // C'est OK ?
 
     }
 
@@ -116,6 +121,7 @@ void *serve(void *arg) { // mettre des limites d'attente sur les recv
         ecrit += send(sock, serialized_msg + ecrit, sizeof(message_debut_serveur)-ecrit, 0); // ??? -> on cast la struct en char* et on envoie le char* du résultat
     }   
     free(mess);
+    free(serialized_msg);
 
     // attendre le message "prêt" du joueur
 
@@ -131,9 +137,7 @@ void *serve(void *arg) { // mettre des limites d'attente sur les recv
             perror("recv");
             close(sock);
             free(arg);
-            int *ret = malloc(sizeof(int));
-            *ret = 1;
-            pthread_exit(ret);
+            return NULL;
         }
         recu += r;
     }
@@ -143,7 +147,9 @@ void *serve(void *arg) { // mettre des limites d'attente sur les recv
 
     // vérifier les infos du message reçu
     // codereq
-    uint16_t v = ntohs(mess_client->CODEREQ_IQ_EQ);
+    uint16_t v = ntohs(mess_client->CODEREQ_ID_EQ);
+
+    free(mess_client);
   
     uint16_t codereq2 = v & 0b1111111111111;
     printf ("codereq2 = %d\n",codereq2);
@@ -176,11 +182,7 @@ void *serve(void *arg) { // mettre des limites d'attente sur les recv
 
     
     // tchat et signalement fin de partie en TCP
-
-
-
-
-    close(sock); // a enlever peut-être un jour
+    // je pense pas qu'on va faire ça ici
     free(arg);
     return NULL;
 }
