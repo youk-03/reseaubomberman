@@ -10,7 +10,6 @@
 #include "partie.h"
 #include "../format_messages.h"
 
-int * socks;
 
 
 joueur * nouveau_joueur(int sock, int i){
@@ -19,16 +18,6 @@ joueur * nouveau_joueur(int sock, int i){
     res->id = i;
     res->pret = 0;
     return res;
-}
-
-void ajoute_client(int c){
-    for (int i=0; i<100; i++){
-        if (socks[i]==-1){
-            socks[i]=c;
-            return;
-        }
-    }
-    printf("Nombre maximum de sockets atteint");
 }
 
 void *serve(void *arg) { // mettre des limites d'attente sur les recv
