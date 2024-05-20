@@ -114,6 +114,7 @@ void *serve_partie(void * arg) { // fonction pour le thread de partie
     // socket multidiffusion
     
     int  sock_multi = socket(PF_INET6, SOCK_DGRAM, 0);
+    ajoute_client(sock_multi);
     struct sockaddr_in6 gradr;
     memset(&gradr, 0, sizeof(gradr));
     gradr.sin6_family = AF_INET6;
@@ -127,6 +128,7 @@ void *serve_partie(void * arg) { // fonction pour le thread de partie
     // socket udp (pour recevoir les messages des clients)
 
     int sock_udp = socket(PF_INET6, SOCK_DGRAM, 0);
+    ajoute_client(sock_udp);
     struct sockaddr_in6 adrudp;
     memset(&adrudp, 0, sizeof(gradr));
     adrudp.sin6_family = AF_INET6;

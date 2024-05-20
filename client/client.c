@@ -105,7 +105,7 @@ int receive_message(int sock) {
   // on vérifie les champs
   uint16_t codereq_id_eq = ntohs(mess->CODEREQ_ID_EQ);
   uint16_t codereq = codereq_id_eq & 0b1111111111111; // pour lire 13 bits
-  uint16_t id = ( codereq_id_eq >>13) & 0b11; //
+  //uint16_t id = ( codereq_id_eq >>13) & 0b11; //
   if (codereq == 15 || codereq == 16) {
     puts("fin de partie");
   }
