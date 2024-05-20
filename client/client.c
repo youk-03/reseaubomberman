@@ -199,6 +199,8 @@ full_grid_msg* send_req(int mode_input, info_joueur* info_joueur, int *sock_udp,
           close(sock_tcp);
           return NULL;
          }
+
+         printf("info_joueur id : %d\n", info_joueur->id);
       
     /* Initialisation sock_udp */
 
@@ -335,7 +337,7 @@ full_grid_msg* send_req(int mode_input, info_joueur* info_joueur, int *sock_udp,
     free(serv_msg);
     free(start_msg);
     free(serialized_msg);
-    free(info_joueur);
+    //free(info_joueur);
     free(adrmdiff_convert);
     free(serialized_serv_msg);
     free(serialized_ready_msg);
@@ -380,14 +382,14 @@ int main(int argc, char *argv[]) {
       exit(-1) ;
   }
  
-  info_joueur * info_joueur = malloc(sizeof(info_joueur));
+  info_joueur *info_j = malloc(sizeof(struct info_joueur));
 
   int *sock_udp = malloc(sizeof(int));
   int *sock_mdiff = malloc(sizeof(int));
   struct sockaddr_in6 *serv_addr = malloc(sizeof(struct sockaddr_in6));
   memset(serv_addr, 0, sizeof(struct sockaddr_in6));
 
-  full_grid_msg* init_grid = send_req(atoi(argv[1]), info_joueur, sock_udp, sock_mdiff, serv_addr, sock_tcp);
+  full_grid_msg* init_grid = send_req(atoi(argv[1]), info_j, sock_udp, sock_mdiff, serv_addr, sock_tcp);
 
   if(!init_grid){
     dprintf(2,"erreur lors de l'envoi de requete exit");
@@ -399,7 +401,7 @@ int main(int argc, char *argv[]) {
   }
 
 
-  int id_joueur = info_joueur->id;
+  int id_joueur = info_j->id;
   board *board = malloc(sizeof(board)); 
   
   setup_board(board);//initialise la grid
@@ -414,6 +416,7 @@ int main(int argc, char *argv[]) {
     case 3: pos->x = board->w-1; pos->y = board->h-1; break;//joueur 4
   }
 
+  printf("je suis id %d, ma position : x: %d, y: %d\n",id_joueur, pos->x, pos->y);
 
   maj_grid(init_grid,board); //passage de req vers la grid pour l'affichage
 
@@ -473,7 +476,7 @@ int main(int argc, char *argv[]) {
 
     while(true){
 
-      ACTION a = control(l, sock_tcp, info_joueur);
+      ACTION a = control(l, sock_tcp, info_j);
 
       poll_cpt = poll(pfds, fd_size,0);
 
@@ -563,7 +566,7 @@ int main(int argc, char *argv[]) {
           
           //envoie de requete de deplacement
 
-            if ((msg = perform_action_req(board, pos, a, list,info_joueur, num_msg)) && a != QUIT){ //si msg NULL c'est que action == NONE
+            if ((msg = perform_action_req(board, pos, a, list,info_j, num_msg)) && a != QUIT){ //si msg NULL c'est que action == NONE
 
               num_msg++;
               num_msg = num_msg%8192; //2^13
@@ -581,7 +584,7 @@ int main(int argc, char *argv[]) {
                 free(sock_mdiff);
                 free(buf_send);
                 free(init_grid);
-                free(info_joueur);
+                free(info_j);
                 exit(0);
               }
 
@@ -618,7 +621,7 @@ int main(int argc, char *argv[]) {
     close(*sock_mdiff);
     free(sock_mdiff);
     free(buf_send);
-    free(info_joueur);
+    free(info_j);
     free(msg);
     free(buf_recv);
     free(msg_recv);
