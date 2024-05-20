@@ -41,7 +41,6 @@ void termine (int sig){
     for (int i=0; i<100; i++){
         if(socks[i]>=0) {
             close(socks[i]);
-            printf("sock %d fermée\n", socks[i]);
         }
     }
     exit(0);

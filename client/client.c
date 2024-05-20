@@ -29,7 +29,7 @@ int receive_message(int sock, line * l) { // retourne 2 en cas de fin de partie
     return 1 ;
   }
   char buf [3];
-  memset(mess,0,sizeof(message_tchat));
+  memset(mess,0,3);
   memset(buf, 0, sizeof(buf));
 
   int recu = 0;
@@ -46,7 +46,7 @@ int receive_message(int sock, line * l) { // retourne 2 en cas de fin de partie
    uint16_t val_entete = ntohs(*entete);
    uint16_t entete_recu=val_entete & 0b11111111111;
 
-  memcpy(mess,(message_tchat*)&buf,sizeof(message_tchat));
+  memcpy(mess,(message_tchat*)&buf,3);
 
   // on vérifie les champs, si le codereq est de 15 ou de 16, on reçoit les valeurs de la fin de partie;
 
@@ -326,7 +326,7 @@ full_grid_msg* send_req(int mode_input, info_joueur* info_joueur, int *sock_udp,
     int multicast_recu;
     socklen_t difflen = sizeof(diffadr);
 
-    memset(buf_recv, 0, sizeof(buf_recv));
+    memset(buf_recv, 0, sizeof(full_grid_msg));
     if ((multicast_recu = recvfrom(*sock_mdiff, buf_recv, sizeof(full_grid_msg), 0, (struct sockaddr *)&diffadr, &difflen)) < 0){
       perror("erreur de recvfrom");
       return NULL;
@@ -361,7 +361,7 @@ int main(int argc, char *argv[]) {
   int sock_tcp = socket(PF_INET6, SOCK_STREAM, 0);
   if (sock_tcp == -1) {
     perror ("erreur creation socket tcp client");
-    return NULL ;
+    exit(0);
   }
   int conv ;
   struct sockaddr_in6 address_sock_tcp;
@@ -491,7 +491,7 @@ int main(int argc, char *argv[]) {
         if(pfds[1].revents & POLLIN){
 
 
-            memset(buf_recv, 0, sizeof(buf_recv));
+            memset(buf_recv, 0, sizeof(full_grid_msg));
             if ((multicast_recu = recvfrom(*sock_mdiff, buf_recv, sizeof(full_grid_msg), 0, NULL, NULL)) < 0){
               perror("erreur de recvfrom");
               exit(-1);
