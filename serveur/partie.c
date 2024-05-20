@@ -336,7 +336,9 @@ void *serve_partie(void * arg) { // fonction pour le thread de partie
             }
             if(is_finished(&p, death)>=0) {
                 printf(" partie finie\n");
-               // fin_partie(,is_finished(&p, death), &p); a remplir
+                for (int i=0; i<4; i++){
+                    fin_partie(p.joueurs[i]->sock,is_finished(&p, death), p);// a remplir
+                }
 
                 break;
             }
@@ -358,7 +360,7 @@ void *serve_partie(void * arg) { // fonction pour le thread de partie
     return NULL;
 }
 
-void fin_partie(int sock, u_int16_t gagnant, partie p){ // gagnant correspond soit à l'id du joueur ou de l'équipe gagnante
+void fin_partie(int sock, u_int16_t gagnant, partie p){
     uint16_t * message = malloc(sizeof(uint16_t));
     if (p.equipes == 0){ // fin partie dans équipes
         * message = htons(gagnant<<13|15);
