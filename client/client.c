@@ -14,7 +14,7 @@
 #include "../game/game.h"
 
 #define PORT_TCP  1024
-#define ADDR  "::1" //"fdc7:9dd5:2c66:be86:7e57:58ff:fe68:b249" // c'est l'adresse du serveur
+#define ADDR  "::1" //"fdc7:9dd5:2c66:be86:7e57:58ff:fe68:aed6" // adresse de la machine  "born"
 #define BUF_SIZE 256
 
 int send_message(int sock,info_joueur * info_joueur, char * message, int dest) {
