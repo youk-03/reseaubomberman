@@ -20,14 +20,14 @@ joueur * nouveau_joueur(int sock, int i){
     return res;
 }
 
-void *serve(void *arg) { // mettre des limites d'attente sur les recv
+void *serve(void *arg) { 
     arg_serve * a = ((arg_serve * )arg);
     int sock = a->sock;
   
   // ** recevoir premier message : type de partie **
 
     //on reçoit la struct sous forme de string, on la reconvertit en struct et on la copie dans mess_client
-    message_debut_client * mess_client = malloc(sizeof(message_debut_client));  // Je sais pas si ça marche, à tester avec le client ------------ normalement ça marche, on croise les doigts 
+    message_debut_client * mess_client = malloc(sizeof(message_debut_client));  
     memset(mess_client, 0, sizeof(*mess_client));
 
     char buf[sizeof(mess_client)];
@@ -46,12 +46,10 @@ void *serve(void *arg) { // mettre des limites d'attente sur les recv
         recu += r;
     }
 
-    //printf("recu : %s\n", buf); // n'affichera pas grand chose 
+
     memcpy(mess_client,(message_debut_client*)&buf,sizeof(message_debut_client));
     uint16_t codereq_id_eq = ntohs(mess_client->CODEREQ_ID_EQ);
-    uint16_t codereq = codereq_id_eq & 0b1111111111111; // pour lire 13 bits
-    // pour récupérer id -> on décalle de 13 dans l'autre sens ( >>13) & 0b11
-    printf("codereq: %d \n",codereq);
+    uint16_t codereq = codereq_id_eq & 0b1111111111111; 
 
     joueur * j;
     if (codereq==1) {
@@ -87,45 +85,36 @@ void *serve(void *arg) { // mettre des limites d'attente sur les recv
     memset(mess, 0, sizeof(message_debut_serveur));
 
     if (codereq==1) { // partie 4v4
-        // mess->CODEREQ_ID_EQ = htons((13<<j->id)|9); // sens à vérifier
+  
         mess->CODEREQ_ID_EQ = htons((j->id)<<13|9);
         partie * p4v4 = * (a->partie4v4);
         mess->PORTUDP = htons(p4v4->port);
         mess->PORTMDIFF = htons(p4v4->port_multi);
         if (inet_pton(AF_INET6, p4v4->addr_multi, mess->ADRMDIFF )!=1){
             perror("erreur inet_pton");
-        }; // C'est OK ? -> c'est OK !
+        }; 
 
     } else { // partie2v2
-        mess->CODEREQ_ID_EQ = htons(((j->id)%2)<<15|(j->id<<13)|10); //j'ai finalement touché au sens du décalage de bits
+        mess->CODEREQ_ID_EQ = htons(((j->id)%2)<<15|(j->id<<13)|10); 
         partie * p2v2 = * (a->partie2v2);
         mess->PORTUDP = htons(p2v2->port);
         mess->PORTMDIFF = htons(p2v2->port_multi);
-        inet_pton(AF_INET6, p2v2->addr_multi, mess->ADRMDIFF ); // C'est OK ?
+        inet_pton(AF_INET6, p2v2->addr_multi, mess->ADRMDIFF ); 
 
     }
 
-        //  aprintf("codereq_id : %u \n",ntohs(mess->CODEREQ_ID_EQ));
-        //  printf("portmdiff : %u \n",a->partie4v4->port_multi);
-        //  printf("portupd : %u \n",a->partie4v4->port);
-        //  printf("id : %u\n",j->id);
-
-
-    // char* serialized_msg = malloc(BUF_SIZE*sizeof(char));
+   
     char* serialized_msg = malloc(sizeof(message_debut_serveur));
     memset(serialized_msg, 0, sizeof(message_debut_serveur));
     memcpy(serialized_msg, mess,sizeof(message_debut_serveur));
 
     int ecrit = 0;  
     while (ecrit<sizeof(message_debut_serveur)){
-        ecrit += send(sock, serialized_msg + ecrit, sizeof(message_debut_serveur)-ecrit, 0); // ??? -> on cast la struct en char* et on envoie le char* du résultat
+        ecrit += send(sock, serialized_msg + ecrit, sizeof(message_debut_serveur)-ecrit, 0); 
     }   
     free(mess);
     free(serialized_msg);
 
-    // attendre le message "prêt" du joueur
-
-   // Je sais pas si ça marche, à tester avec le client ------------ normalement ça marche, on croise les doigts 
     memset(mess_client, 0, sizeof(*mess_client));
 
     memset(buf, 0, sizeof(buf));
@@ -143,7 +132,6 @@ void *serve(void *arg) { // mettre des limites d'attente sur les recv
     }
      memcpy(mess_client,(message_debut_client*)&buf,sizeof(message_debut_client));
 
-    printf("recu \n");
 
     // vérifier les infos du message reçu
     // codereq
@@ -178,11 +166,8 @@ void *serve(void *arg) { // mettre des limites d'attente sur les recv
         }
     }
 
-    j->pret = 1 ; // mettre un mutex ? normalement seul ce thread est sensé écrire dans ce joueur
+    j->pret = 1 ;
 
-    
-    // tchat et signalement fin de partie en TCP
-    // je pense pas qu'on va faire ça ici
     free(arg);
     return NULL;
 }

@@ -16,9 +16,9 @@
 #define PORT_TCP  1024
 #define ADDR  "::1" //"fdc7:9dd5:2c66:be86:7e57:58ff:fe68:aed6" // adresse de la machine  "born"
 #define BUF_SIZE 256
+unsigned int num_msg = 0;
 
 
-//   //todo: bouger dans une autre méthode
 
 //   //réception des premiers champs
 int receive_message(int sock, line * l) { // retourne 2 en cas de fin de partie 
@@ -50,8 +50,6 @@ int receive_message(int sock, line * l) { // retourne 2 en cas de fin de partie
 
   // on vérifie les champs, si le codereq est de 15 ou de 16, on reçoit les valeurs de la fin de partie;
 
- // uint16_t codereq_id_eq = ntohs(mess->CODEREQ_ID_EQ);
- // uint16_t codereq = codereq_id_eq & 0b1111111111111; // pour lire 13 bits
 
   if (entete_recu == 15) {
     unsigned int gagnant_eq = (val_entete >> 13) & 0b11;
@@ -97,47 +95,10 @@ int receive_message(int sock, line * l) { // retourne 2 en cas de fin de partie
   }
 
   print_message(id,buf_data,l);
-  //printf("message tchat : %s\n",buf_data);
   free(mess);
   return 0 ; 
 
 }
-
-int communicate_tchat(int sock) { // bientôt à la poubelle
-  struct pollfd * pfds = malloc(sizeof(*pfds));
-
-  if (pfds == NULL) {
-    perror("erreur de malloc");
-    return 1 ;
-  }
-  memset(pfds, 0, sizeof(*pfds));
-  pfds[0].fd= sock;
-  pfds[0].events= POLLIN | POLLOUT ; 
-
-  while(1) { // en dehors de la fonction communicate_tchat
-    int poll_cpt = poll(pfds, 1, 0); 
-
-    if (poll_cpt == -1) {
-      perror("erreur poll");
-      return 1;
-    }
-
-    if (pfds[0].revents & POLLIN) {
-        //on reçoit le message
-    } 
-
-    if (pfds[0].revents & POLLOUT) {
-      // on envoie le message
-
-    }
-  }
-
-  free(pfds);
-
-}
-
-
-unsigned int num_msg = 0;
 
 
 full_grid_msg* send_req(int mode_input, info_joueur* info_joueur, int *sock_udp, int *sock_mdiff, struct sockaddr_in6 *addr_udp, int sock_tcp) { //ALLOUER LES POINTEURS AVANT DE LES PASSER
@@ -169,10 +130,6 @@ full_grid_msg* send_req(int mode_input, info_joueur* info_joueur, int *sock_udp,
       close(sock_tcp);
       return NULL ;
     }
-
-    // memset(start_msg, 0, sizeof(message_debut_client));
-    // join_req(start_msg,mode);
-    // memcpy(serialized_msg,start_msg,sizeof(&start_msg)); //
  
 
     struct_to_string(start_msg,serialized_msg,info_joueur->mode);
@@ -244,7 +201,6 @@ full_grid_msg* send_req(int mode_input, info_joueur* info_joueur, int *sock_udp,
          }
       
     /* Initialisation sock_udp */
-    //////////////////////////////////////////////////////////////////////////
 
 
     if((*sock_udp = socket(AF_INET6, SOCK_DGRAM, 0)) < 0) {
@@ -268,11 +224,9 @@ full_grid_msg* send_req(int mode_input, info_joueur* info_joueur, int *sock_udp,
     addr_udp->sin6_port = serv_msg->PORTUDP; // port udp envoyé par le serveur
     inet_pton(AF_INET6, ADDR, &addr_udp->sin6_addr);
 
-    //////////////////////////////////////////////////////////////////////:
 
     /* Initialisation sock_mdiff */
 
-    //int sock_mdiff;
 
     if((*sock_mdiff = socket(AF_INET6, SOCK_DGRAM, 0)) < 0) {
       perror("echec de socket");
@@ -329,7 +283,6 @@ full_grid_msg* send_req(int mode_input, info_joueur* info_joueur, int *sock_udp,
       close(sock_tcp);
       return NULL ;
     }
-    ////////////////////////////////////////////////////////////////////////
 
     //remplissage de la struct avec les données obtenues
     memset(start_msg, 0, sizeof(message_debut_client));
@@ -346,8 +299,8 @@ full_grid_msg* send_req(int mode_input, info_joueur* info_joueur, int *sock_udp,
     }
 
     ready_req(start_msg,info_joueur);
-    printf("id : %d , mode : %d, team : %d \n",info_joueur->id,info_joueur->mode,info_joueur->team);
-    memcpy(serialized_ready_msg,start_msg,sizeof(&start_msg)); // 
+    printf("id : %d\n",info_joueur->id);
+    memcpy(serialized_ready_msg,start_msg,sizeof(&start_msg));  
     
     s = 0;
     while (s < sizeof(message_debut_client)) {
@@ -365,7 +318,7 @@ full_grid_msg* send_req(int mode_input, info_joueur* info_joueur, int *sock_udp,
 
 
 
-    char *buf_recv= malloc(sizeof(full_grid_msg)); //faire d'abord un recv des premier octets pour savoir si c'est une full_grid_msg ou l'autre ?
+    char *buf_recv= malloc(sizeof(full_grid_msg)); 
     full_grid_msg *msg = malloc(sizeof(full_grid_msg)); 
 
 
@@ -424,9 +377,9 @@ int main(int argc, char *argv[]) {
   if (c == -1) {
     perror("erreur connexion tcp");
     close(sock_tcp);
-      return NULL ;
+      exit(-1) ;
   }
-  //stock info du joueur (id etc)
+ 
   info_joueur * info_joueur = malloc(sizeof(info_joueur));
 
   int *sock_udp = malloc(sizeof(int));
@@ -444,8 +397,7 @@ int main(int argc, char *argv[]) {
     free(sock_mdiff);
     exit(1);
   }
-  //printf("envoie grille effectue\n");
-  //id joueur 0-3 enum val pareil
+
 
   int id_joueur = info_joueur->id;
   board *board = malloc(sizeof(board)); 
@@ -462,12 +414,11 @@ int main(int argc, char *argv[]) {
     case 3: pos->x = board->w-1; pos->y = board->h-1; break;//joueur 4
   }
 
-  //dprintf(2,"je suis id %d, ma position : x: %d, y: %d\n",id_joueur, pos->x, pos->y);
 
   maj_grid(init_grid,board); //passage de req vers la grid pour l'affichage
 
   //setup bibliotheque ncurses
-    line* l = malloc(sizeof(line));//utile ?
+    line* l = malloc(sizeof(line));
     l->cursor = 0;
     l->clean = 0;
 
@@ -486,7 +437,6 @@ int main(int argc, char *argv[]) {
 
     refresh_game(board,l); //affiche board
 
-     //int tick = 30*1000;
      bomblist *list =create_list(10);
      message_partie_client *msg;
 
@@ -503,7 +453,7 @@ int main(int argc, char *argv[]) {
     u_int16_t codereq = 0;
 
 
-    //version avec poll
+
     int fd_size = 3;
     struct pollfd *pfds = malloc(sizeof(*pfds) * fd_size);
     memset(pfds, 0, sizeof(*pfds) * fd_size);
@@ -539,10 +489,7 @@ int main(int argc, char *argv[]) {
       }
 
         if(pfds[1].revents & POLLIN){
-          //dprintf(2,"reception\n");
 
-          //reception donnee de grille
-          //recuperation des 12 premier octets pour connaitre la val de codereq et savoir si c'est full ou pas
 
             memset(buf_recv, 0, sizeof(buf_recv));
             if ((multicast_recu = recvfrom(*sock_mdiff, buf_recv, sizeof(full_grid_msg), 0, NULL, NULL)) < 0){
@@ -553,17 +500,15 @@ int main(int argc, char *argv[]) {
               break;
             }
             memcpy(msg_recv, buf_recv, sizeof(full_grid_msg));
-            //printf("%d\n", ntohs(msg_recv->CODEREQ_ID_EQ) & 0b1111111111111);
 
             if((ntohs(msg_recv->CODEREQ_ID_EQ) & 0b1111111111111) == 11){ //full_grid
-            //printf("full_grid\n");
 
 
               maj_grid(msg_recv,board); //passage de req vers la grid pour l'affichage
               memset(msg_recv, 0, sizeof(full_grid_msg));
 
             }
-            else if((ntohs(msg_recv->CODEREQ_ID_EQ) & 0b1111111111111) == 12){//modified_grid
+            else if((ntohs(msg_recv->CODEREQ_ID_EQ) & 0b1111111111111) == 12){//modified_grid diffusion (not working :( )
             //printf("modified_grid\n");
           //   memcpy(&modified_c_msg, msg_recv, sizeof(modified_cases_msg));
           //   int len = modified_c_msg.NB;
@@ -601,13 +546,11 @@ int main(int argc, char *argv[]) {
               //cas codereq >= 17 donc mort d'un joueur
               codereq = ntohs(msg_recv->CODEREQ_ID_EQ) & 0b1111111111111;
               if(codereq == id_joueur + 17){
-                    //close(*sock_mdiff);
                     if(sock_udp != NULL){
                     close(*sock_udp);
                     free(sock_udp);
                     sock_udp = NULL;
                     }
-                    //free(sock_mdiff);
                     printf("gameover\n");
               }
             }
@@ -627,14 +570,6 @@ int main(int argc, char *argv[]) {
 
               memcpy(buf_send,msg,sizeof(message_partie_client));
 
-              //PRINT POUR DEBUG
-
-              // for(int i=0; i<sizeof(message_partie_client); i++){
-              //   dprintf(2,"%02x", buf_send[i]);
-              // }          
-              // dprintf(2,"\n");
-
-              //PRINT POUR DEBUG FIN
 
               env = sendto(*sock_udp, buf_send, sizeof(message_partie_client), 0, (struct sockaddr *) serv_addr, sizeof(struct sockaddr_in6));
 
@@ -666,73 +601,6 @@ int main(int argc, char *argv[]) {
 
     }
 
-
-   // while (true) {
-       // ACTION a = control(l);
-
-    //     if ((msg = perform_action_req(board, pos, a, list,info_joueur, num_msg)) && a != QUIT){ //joueur demande a quitter le jeu si NULL
-    //     num_msg++;
-    //     num_msg = num_msg%8192; //2^13
-
-    //     memcpy(buf_send,msg,sizeof(message_partie_client));
-
-    //     for(int i=0; i<sizeof(message_partie_client); i++){
-    //     dprintf(2,"%02x", buf_send[i]);
-    // }          
-    // dprintf(2,"\n");
-
-    //     //envoyer la struct au serveur en udp
-    //     env = sendto(*sock_udp, buf_send, sizeof(message_partie_client), 0, (struct sockaddr *) serv_addr, sizeof(struct sockaddr_in6));
-
-    //     if(env<0){
-    //       perror("echec sendto client game");
-    //       close(*sock_mdiff);
-    //       close(*sock_udp);
-    //       free(sock_udp);
-    //       free(sock_mdiff);
-    //       free(buf_send);
-    //       free(init_grid);
-    //       free(info_joueur);
-    //       exit(0);
-    //     }
-
-    //     memset(buf_send,0,sizeof(message_partie_client)+1);
-    //     memset(msg,0,sizeof(message_partie_client));
-
-
-
-        //recevoir un message du serveur en udp
-
-    // memset(buf_recv, 0, sizeof(buf_recv));
-    // if ((multicast_recu = recvfrom(*sock_mdiff, buf_recv, sizeof(full_grid_msg), 0, NULL, NULL)) < 0){
-    //   perror("erreur de recvfrom");
-    //   exit(-1);
-    // }
-    // if(multicast_recu == 0){
-    //   break;
-    // }
-    // memcpy(msg_recv, buf_recv, sizeof(full_grid_msg));
-
-    // maj_grid(msg_recv,board); //passage de req vers la grid pour l'affichage
-
-    // refresh_game(board,NULL); //affiche board
-
-    // memset(msg_recv, 0, sizeof(full_grid_msg));
-
-       // free(msg);/////////////////////
-
-         //curs_set(1); // Set the cursor to visible again
-         //endwin(); /* End curses mode */
-         //exit(0);
-
-        //}
-        // else if(a== QUIT){
-        //   break;
-        // }
-
-    //}
-
-    printf("gameover\n");
     free_board(board);
     free(pos);
     free(l);
@@ -741,13 +609,6 @@ int main(int argc, char *argv[]) {
    curs_set(1); // Set the cursor to visible again
    endwin(); /* End curses mode */
 
-
-  //affichage de la grille pour le client
-  //dans info joueur id initialisé
-
-      //         for(int i=0; i<sizeof(full_grid_msg); i++){
-    //     printf("%02x", buf[i]);
-    // }
 
     free(init_grid);
     if(sock_udp != NULL){
@@ -766,18 +627,4 @@ int main(int argc, char *argv[]) {
     
   return 0;
 
-  //rajouter le jeux, la grille avec le board toussa toussa et faire en sorte que quand le 
-  //client essaye de se deplacer au lieu de changer la grille ça envoie une requête
-  //au serveur
-  //récupérer les grille multidiffusé, maj la grille du client et afficher
-
-  //le client stock qui il est normalement ? (id joueur)
-
-
-
-  /* pour le serveur :
-  le serveur va avoir la grille la vrai grille, il va recevoir les demande des joueurs les maj
-  puis envoyer au joueur en multidiffusion la grille modifiée et toute les secondes la grille complete
-  
-  coder les fonc qui recupere les requetes des joueurs et maj la grid avec */
 }

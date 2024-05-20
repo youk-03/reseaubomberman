@@ -321,7 +321,7 @@ bool maj_bomb(bomblist *list, int timepassed, board *board, bool death[4]){
         }
     }
     return res;
-}; //appel bomb explode si une bombe doit exploser, deduit time passed du timeleft de chaque bomb
+}; 
 
 
 //grid 
@@ -361,12 +361,7 @@ void setup_board(board* board) {
     board->h = lines - 2 - 1; // 2 rows reserved for border, 1 row for chat
     board->w = columns - 2; // 2 columns reserved for border
     board->grid = calloc((board->w)*(board->h),sizeof(char));
-    //printf("lines : %d, column: %d",board->w,board->h);
     maze1(board);
-    // set_grid(board,1,1,CHARACTER); //joueur1
-    // set_grid(board,board->w-1,1,CHARACTER2); //joueur2 verifier que les placements marchent bien 
-    // set_grid(board,1,board->h-1,CHARACTER3); //joueur3
-    // set_grid(board,board->w-1,board->h-1,CHARACTER4); //joueur4
 
     getmaxyx(stdscr,lines,columns);
 }
@@ -536,7 +531,7 @@ bool perform_action(board* b, pos* p, ACTION a,bomblist *list, int character) {/
         case DOWN:
             xd = 0; yd = 1; break;
         case PBOMB : 
-            setbomb(b,p,list); return false;/////////////////////////////////////////
+            setbomb(b,p,list); return false;
         case QUIT:
             return true;
         default: return false; 
@@ -553,7 +548,7 @@ bool perform_action(board* b, pos* p, ACTION a,bomblist *list, int character) {/
 
     p->y = (p->y + b->h)%b->h;
     if(get_grid(b,p->x,p->y) == EMPTY || get_grid(b,p->x,p->y) == EXPLODE){
-    set_grid(b,p->x,p->y,character);//mettre id du character ici instead
+    set_grid(b,p->x,p->y,character);
     }
     else { //si mur pos change pas
         p->x = prevx;
@@ -574,52 +569,3 @@ void print_message (int id, char * s, line * l){
     }
     l->clean = 1;
 }
-
-
-// int main()
-// {
-//     board* b = malloc(sizeof(board));;
-//     line* l = malloc(sizeof(line));
-//     l->cursor = 0;
-//     pos* p = malloc(sizeof(pos));
-//     p->x = 0; p->y = 0;      //ICI-----------------------------------
-
-//     // NOTE: All ncurses operations (getch, mvaddch, refresh, etc.) must be done on the same thread.
-//     initscr(); /* Start curses mode */ // Initialise la structure WINDOW et autres paramètres
-//     raw(); /* Disable line buffering */
-//     intrflush(stdscr, FALSE); /* No need to flush when intr key is pressed */
-//     keypad(stdscr, TRUE); /* Required in order to get events from keyboard */
-//     nodelay(stdscr, TRUE); /* Make getch non-blocking */
-//     noecho(); /* Don't echo() while we do getch (we will manually print characters when relevant) */
-//     curs_set(0); // Set the cursor to invisible
-//     start_color(); // Enable colors
-//     init_pair(1, COLOR_YELLOW, COLOR_BLACK); // Define a new color style (text is yellow, background is black)
-//     init_pair(2, COLOR_MAGENTA, COLOR_BLACK);
-//     init_pair(3, COLOR_RED, COLOR_BLACK);
-
-//     setup_board(b);
-//     int tick = 30*1000;
-//     bomblist *list =create_list(10);
-
-//     while (true) {
-//         ACTION a = control(l);
-//         if (perform_action(b, p, a, list)) break;
-//         refresh_game(b,l);
-//         usleep(tick);
-//         if(maj_bomb(list,tick,b)) break;
-//         //3 sec plus tard bomb explode stocker la valeur en tant depuis que la bomb a été posé dans une struct bomb et une fois 3 secatteinte la faire exploser
-//         //je suis en train de faire de l'objet avec du c si c'est pas beau ça
-//     }
-
-//     printf("gameover");
-//     free_board(b);
-//     empty_list(list);
-
-//     curs_set(1); // Set the cursor to visible again
-//     endwin(); /* End curses mode */
-
-//     free(p); free(l); free(b);
-
-//     return 0;
-    
-// }

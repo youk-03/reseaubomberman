@@ -16,8 +16,6 @@
 #define BITSOF(x) (sizeof(x) * 8)
 
 
-//stocker les requete udp des joueurs pour les appliquer (dans un tableau)
-
 
 message_partie_client_liste* create_list_msg (int capacity){
     message_partie_client_liste* res = malloc(sizeof(message_partie_client));
@@ -192,7 +190,7 @@ void print_uint8_t(uint8_t n) {
 modified_cases_msg* modified_grid_req(unsigned int num, uint8_t nb){
     modified_cases_msg *res = malloc(sizeof(modified_cases_msg));
     if(!res){
-        exit(1); //sur ?
+        exit(1); 
     }
     res->CODEREQ_ID_EQ = htons(12);
     res->NUM = htons(num);
@@ -206,14 +204,14 @@ modified_cases_msg* modified_grid_req(unsigned int num, uint8_t nb){
 full_grid_msg* full_grid_req (board *b, unsigned int num){
     full_grid_msg *res = malloc(sizeof(full_grid_msg));
     if(!res){
-        exit(1); //sur ?
+        exit(1); 
     }
     res->CODEREQ_ID_EQ = htons(11);
     res->NUM = htons(num);
     res->HAUTEUR_LARGEUR = htons((b->w)<<8| b->h);
     //case
     __uint8_t casei=0;
-    for(int i = 0; i<GRID_SIZE; i++){ //hum pas sur pour la taille vu que le machin fait des bonds de 2
+    for(int i = 0; i<GRID_SIZE; i++){ 
         switch(b->grid[i]){
             case EMPTY: casei = 0; break;
             case CHARACTER: casei=5; break;
@@ -310,7 +308,6 @@ void maj_grid_cases (caseholder *c, board *b){
     int obj = -1;
 
     for(int i=0; i<c->length; i++){
-        dprintf(2,"bufcaseholderseg\n");
         y= ntohs(c->caseh[i]->xy) >> 8 & 0b11111111;
         x= ntohs(c->caseh[i]->xy) & 0b11111111;
         obj = from_rtog(c->caseh[i]->action);
@@ -342,7 +339,6 @@ caseholder* get_difference(board *old, board *new){
             for(int x = 0; x<old->w; x++){
      
                 if(get_grid(old,x,y) != get_grid(new,x,y)){
-                      printf("board modif\n");
                     cases = malloc(sizeof(CASES));
                     cases->xy = htons(y << 8 | x);
                     cases->action = from_gtor(get_grid(new,x,y));
@@ -424,7 +420,7 @@ modified_cases_msg* maj_board(message_partie_client_liste* list, bomblist *bombl
                 if(req_j2[0] == NULL){
                     req_j2[0] = list->msg_liste[i]; 
                 }
-                else if((ntohs(req_j2[0]->NUM_ACTION) & 0b1111111111111)< num_msg_cli){ //req plus recente donc
+                else if((ntohs(req_j2[0]->NUM_ACTION) & 0b1111111111111)< num_msg_cli){ 
                     req_j2[0] = list->msg_liste[i]; 
                 }
                 else {
@@ -445,7 +441,7 @@ modified_cases_msg* maj_board(message_partie_client_liste* list, bomblist *bombl
                 if(req_j3[0] == NULL){
                     req_j3[0] = list->msg_liste[i]; 
                 }
-                else if((ntohs(req_j3[0]->NUM_ACTION) & 0b1111111111111)< num_msg_cli){ //req plus recente donc
+                else if((ntohs(req_j3[0]->NUM_ACTION) & 0b1111111111111)< num_msg_cli){ 
                     req_j3[0] = list->msg_liste[i]; 
                 }
                 else {
@@ -466,7 +462,7 @@ modified_cases_msg* maj_board(message_partie_client_liste* list, bomblist *bombl
                 if(req_j4[0] == NULL){
                     req_j4[0] = list->msg_liste[i]; 
                 }
-                else if((ntohs(req_j4[0]->NUM_ACTION) & 0b1111111111111)< num_msg_cli){ //req plus recente donc
+                else if((ntohs(req_j4[0]->NUM_ACTION) & 0b1111111111111)< num_msg_cli){
                     req_j4[0] = list->msg_liste[i]; 
                 }
                 else {
@@ -491,14 +487,10 @@ modified_cases_msg* maj_board(message_partie_client_liste* list, bomblist *bombl
 
     from_clientreq_toboard(board, req_j4[0], p->joueurs[3]->pos, bomblist);
     from_clientreq_toboard(board, req_j4[1], p->joueurs[3]->pos, bomblist);
-
-    //retourne enquete de modified_msg l'envoie des cases se fait en dehors  
+ 
 
     return modified_grid_req(num, list->length); 
  
-
-    //VIDER LA LISTE MAINTENANT apres
-    //empty_list_msg(list);
 
 }
 
@@ -545,7 +537,6 @@ void from_clientreq_toboard(board *board, message_partie_client *msg, pos* pos, 
     unsigned int num = ntohs(msg->NUM_ACTION) & 0b1111111111111;
     ACTION a;
 
-    printf("%d id, %u num, %d action\n", id, num, action);
     //switch action
     switch(action){
         case 0: a = UP; break;
@@ -556,7 +547,7 @@ void from_clientreq_toboard(board *board, message_partie_client *msg, pos* pos, 
         case 5: a = QUIT;  break; 
     }
     //setgrid
-    perform_action(board, pos, a, bomblist, id);//capter que le client a tenter de quitter aussi et gerer le cas
+    perform_action(board, pos, a, bomblist, id);
 
 }
 
@@ -607,57 +598,3 @@ message_partie_client* perform_action_req(board* b, pos* p, ACTION a,bomblist *l
     return msg;
 }
 
-
-// int main (int argc, char* argv[]){
-//     //test udp ipv6
-//     int sock = socket(PF_INET6, SOCK_DGRAM, 0);
-//     if(sock < 0){
-//         perror("erreur socket: ");
-//         return -1;
-//     }
-
-//     struct sockaddr_in6 servadr;
-//     memset(&servadr, 0, sizeof(servadr));
-//     servadr.sin6_family = AF_INET6;
-//     inet_pton(AF_INET6, "::1", &servadr.sin6_addr); //addr en arg svp
-//     servadr.sin6_port = htons(2525);
-//     socklen_t len = sizeof(servadr);
-
-//     //envoie du message
-//     board* b = malloc(sizeof(board));;
-//     setup_board(b);
-//     full_grid_msg *req =full_grid_req(b, 5);
-//     char *buffer = malloc(sizeof(full_grid_msg)+1);
-//     memcpy(buffer,req,sizeof(full_grid_msg));
-
-//     for(int i=0; i<sizeof(full_grid_msg); i++){
-//         printf("%02x", buffer[i]);
-//     }
-
-//     //tester une fonc pour print la grid ?
-
-//     //refresh_game(b, NULL);
-
-
-//     // modified_cases_msg *req =modified_grid_req(3,0x5);
-//     // char *buffer = malloc(sizeof(modified_cases_msg)+1);
-//     // memcpy(buffer,req,sizeof(modified_cases_msg));
-
-//     // for(int i=0; i<sizeof(modified_cases_msg); i++){
-//     //     printf("%02x", buffer[i]);
-//     // }
-
-//     // printf("\n");
-//     // printf("%u, %u num %u l'autre", ntohs(req->NUM), ntohs(req->CODEREQ_ID_EQ));
-
-
-
-//     int env = sendto(sock, buffer, sizeof(full_grid_msg), 0, (struct sockaddr *)&servadr, len);
-//     if(env < 0){
-//         perror("echec sendto");
-//         return -2;
-//     }
-
-
-//     return 0;
-// }

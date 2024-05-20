@@ -57,10 +57,9 @@ int main(int argc, char *argv[]){
         perror("erreur listen");
         exit(2);
     }
-    /* TODO : créer une partie vide puis et faire en sorte qu'on envoie 
-    le pointeur vers les parties à compléter dans serve */
-    partie * p4v4 = nouvelle_partie(0); // free fin de la partie
-    partie * p2v2 = nouvelle_partie(1); // free 
+
+    partie * p4v4 = nouvelle_partie(0); 
+    partie * p2v2 = nouvelle_partie(1); 
 
     struct sigaction action;
     memset(&action, 0, sizeof(struct sigaction));
@@ -70,34 +69,17 @@ int main(int argc, char *argv[]){
     }
 
     while(1){
-        /*printf("Partie prête : %d \n", partie_prete(* p4v4));
-        if (partie_prete(* p4v4)){
-            // lancer thread partie
-            pthread_t thread_partie; // TODO : sauvegarder les threads de parties
-            if(pthread_create(&thread_partie, NULL, serve_partie, p4v4)){
-                perror("pthread_create : nouvelle partie");
-                continue;
-            }
-            
-            // mettre une nouvelle partie dans p4v4
-            p4v4 = nouvelle_partie(0);
-        }
-        if (partie_prete(* p2v2)){
-            // same
-        }*/
-        // TODO : enregistrer les threads de parties lancés
-
 
         // accepte un client
         struct sockaddr_in6 addrclient;
         socklen_t size=sizeof(addrclient);
     
-        int sock_client = accept(sock, (struct sockaddr *) &addrclient, &size); // close fin de la partie
+        int sock_client = accept(sock, (struct sockaddr *) &addrclient, &size); 
         ajoute_client(sock_client);
 
         if (sock_client >= 0) {
             arg_serve * arg = malloc(sizeof(arg_serve));
-            arg->partie4v4 = &p4v4; // malloc ?
+            arg->partie4v4 = &p4v4; 
             arg->partie2v2 = &p2v2;
             arg->sock = sock_client;
 

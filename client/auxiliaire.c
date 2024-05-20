@@ -24,10 +24,9 @@ int send_message(int sock,info_joueur * info_joueur, char * message, int dest) {
 
 
   mess->CODEREQ_ID_EQ=htons((info_joueur->team << 15) | (info_joueur->id << 13) | (dest));
-  //printf("%d\n", mess->CODEREQ_ID_EQ);
-  mess->LEN=(uint8_t)(strlen(message)); // + 1?
+  mess->LEN=(uint8_t)(strlen(message)); 
   int size = 3 + strlen(message);
-  char buf [size];//malloc(sizeof(message_tchat))  ; //16 pour codereq_id_eq, 8 pour len
+  char buf [size];
   memset(buf, 0, size);
   memcpy(buf,mess,3);
 
@@ -35,7 +34,7 @@ int send_message(int sock,info_joueur * info_joueur, char * message, int dest) {
   memcpy(buf+3,message,strlen(message)*sizeof(char));
   //envoi de la première partie
 
-  //printf("contenu buffer : %s, size %d \n",buf,size);
+
 
   int sent = 0 ;
   while(sent<size) {
@@ -48,24 +47,12 @@ int send_message(int sock,info_joueur * info_joueur, char * message, int dest) {
   } 
 
 
-  //printf("taille msg %ld\n",sizeof(buf));
-  //printf("envoye : %d \n",sent);
+
       
 
   // envoi du message 
 
 
-
-  //char data [1+mess->LEN];
-  //memcpy(buf,message,strlen(message)*sizeof(char));
-
-//   sent=0 ;
-
- // printf("contenu buffer : %s, size %d \n",buf,size);
-
-  
-
-  //printf("message envoyé\n");
   free(mess);
   return 0;
 }
@@ -102,7 +89,7 @@ int move_req(message_partie_client * msg_client, info_joueur * info_joueur, ACTI
     case LEFT: action=3; break;
     case RIGHT: action=1; break;
     case PBOMB:action=4; break;
-    case QUIT: action=5; break; //je vois pas l'interet de annuler la derniere demande de déplacement donc quit 
+    case QUIT: action=5; break; 
     }
 
     msg_client->NUM_ACTION = htons((action << 13) | num); 
