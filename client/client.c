@@ -32,7 +32,7 @@ int send_message(int sock,info_joueur * info_joueur, char * message, int dest) {
 
 
   mess->CODEREQ_ID_EQ=htons((info_joueur->team << 15) | (info_joueur->id << 13) | (dest));
-  printf("%d\n", mess->CODEREQ_ID_EQ);
+  //printf("%d\n", mess->CODEREQ_ID_EQ);
   mess->LEN=(uint8_t)(strlen(message)); // + 1?
   int size = 3 + strlen(message);
   char buf [size];//malloc(sizeof(message_tchat))  ; //16 pour codereq_id_eq, 8 pour len
@@ -57,8 +57,8 @@ int send_message(int sock,info_joueur * info_joueur, char * message, int dest) {
   } 
 
 
-  printf("taille msg %ld\n",sizeof(buf));
-  printf("envoye : %d \n",sent);
+  //printf("taille msg %ld\n",sizeof(buf));
+  //printf("envoye : %d \n",sent);
       
 
   // envoi du message 
@@ -74,7 +74,7 @@ int send_message(int sock,info_joueur * info_joueur, char * message, int dest) {
 
   
 
-  printf("message envoyé\n");
+  //printf("message envoyé\n");
   free(mess);
   return 0;
 }
@@ -128,7 +128,7 @@ int receive_message(int sock) {
       }
       recu += r;
   }
-  printf("message tchat : %s\n",buf_data);
+  //printf("message tchat : %s\n",buf_data);
   free(mess);
 // while(1){};
   return 0 ; 
@@ -288,7 +288,7 @@ full_grid_msg* send_req(int mode_input, info_joueur* info_joueur, int *sock_udp,
         char adrmdiff_string[INET6_ADDRSTRLEN];
         inet_ntop(AF_INET6,adrmdiff_convert,adrmdiff_string,INET6_ADDRSTRLEN);
           
-        printf("adresse de multidiffusion : %s \n",adrmdiff_string);
+        //printf("adresse de multidiffusion : %s \n",adrmdiff_string);
 
         //  //printf("eq %u\n",ntohs(serv_msg->CODEREQ_ID_EQ)>>15 & 0b1); //? 
         //  printf("id %u\n",ntohs(serv_msg->CODEREQ_ID_EQ)>>13 & 0b11);
@@ -401,7 +401,7 @@ full_grid_msg* send_req(int mode_input, info_joueur* info_joueur, int *sock_udp,
     }
 
     ready_req(start_msg,info_joueur);
-    printf("id : %d , mode : %d, team : %d \n",info_joueur->id,info_joueur->mode,info_joueur->team); // attention, l'id et la team sont inversés
+    //printf("id : %d , mode : %d, team : %d \n",info_joueur->id,info_joueur->mode,info_joueur->team); // attention, l'id et la team sont inversés
     memcpy(serialized_ready_msg,start_msg,sizeof(&start_msg)); // 
     
     s = 0;
@@ -417,7 +417,7 @@ full_grid_msg* send_req(int mode_input, info_joueur* info_joueur, int *sock_udp,
       s += sent;
     }
 
-    puts("send ready effectue (client)");
+   // puts("send ready effectue (client)");
 
     // lecture de multidiffusion
 
@@ -434,7 +434,7 @@ full_grid_msg* send_req(int mode_input, info_joueur* info_joueur, int *sock_udp,
       perror("erreur de recvfrom");
       return NULL;
     }
-    printf("reçu en multidiffusion  : %s\n", buf_recv);
+    //printf("reçu en multidiffusion  : %s\n", buf_recv);
 
 
     free(buf_recv);
@@ -483,7 +483,7 @@ int main(int argc, char *argv[]) {
     free(sock_mdiff);
     exit(1);
   }
-  printf("envoie grille effectue\n");
+  //printf("envoie grille effectue\n");
   //id joueur 0-3 enum val pareil
 
   int id_joueur = info_joueur->id;
@@ -508,6 +508,7 @@ int main(int argc, char *argv[]) {
   //setup bibliotheque ncurses
     line* l = malloc(sizeof(line));//utile ?
     l->cursor = 0;
+    l->clean = 0;
 
     // NOTE: All ncurses operations (getch, mvaddch, refresh, etc.) must be done on the same thread.
     initscr(); /* Start curses mode */ // Initialise la structure WINDOW et autres paramètres
@@ -522,7 +523,7 @@ int main(int argc, char *argv[]) {
     init_pair(2, COLOR_MAGENTA, COLOR_BLACK);
     init_pair(3, COLOR_RED, COLOR_BLACK);
 
-    refresh_game(board,NULL); //affiche board
+    refresh_game(board,l); //affiche board
 
      //int tick = 30*1000;
      bomblist *list =create_list(10);
@@ -600,7 +601,7 @@ int main(int argc, char *argv[]) {
 
             }
             else if((ntohs(msg_recv->CODEREQ_ID_EQ) & 0b1111111111111) == 12){//modified_grid
-            printf("modified_grid\n");
+            //printf("modified_grid\n");
           //   memcpy(&modified_c_msg, msg_recv, sizeof(modified_cases_msg));
           //   int len = modified_c_msg.NB;
           //   caseholder *caseholder = create_list_caseholder(len);
@@ -635,7 +636,7 @@ int main(int argc, char *argv[]) {
             }
           
           
-           refresh_game(board,NULL); //affiche board
+           refresh_game(board,l); //affiche board
 
         }
         else if(pfds[0].revents & POLLOUT){
@@ -751,7 +752,7 @@ int main(int argc, char *argv[]) {
 
     //}
 
-    printf("gameover");
+    printf("gameover\n");
     free_board(board);
     free(pos);
     free(l);
