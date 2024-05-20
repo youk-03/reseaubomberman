@@ -21,19 +21,22 @@
 //   //todo: bouger dans une autre méthode
 
 //   //réception des premiers champs
-int receive_message(int sock, line * l) {
+int receive_message(int sock, line * l) { // retourne 2 en cas de fin de partie 
 
   message_tchat * mess = malloc(sizeof(message_tchat));
+  
+  if (mess == NULL) {
+    perror( "erreur de malloc");
+    return 1 ;
+  }
   char buf [3];
   memset(mess,0,sizeof(message_tchat));
   memset(buf, 0, sizeof(buf));
 
- // retirer la ligne d'après
-
 
   int recu = 0;
-  while(recu<3) { 
-      int r = recv(sock, buf+recu, 3-recu, 0);
+  while(recu<2) { 
+      int r = recv(sock, buf+recu, 2-recu, 0);
       if (r<0){
           perror("erreur lecture tchat entête");
           return 1;
@@ -41,26 +44,53 @@ int receive_message(int sock, line * l) {
       recu += r;
   }
 
+   uint16_t *entete = (uint16_t *) buf;
+   uint16_t val_entete = ntohs(*entete);
+   uint16_t entete_recu=val_entete & 0b11111111111;
 
-  
   memcpy(mess,(message_tchat*)&buf,sizeof(message_tchat));
-  // on vérifie les champs
-  uint16_t codereq_id_eq = ntohs(mess->CODEREQ_ID_EQ);
-  uint16_t codereq = codereq_id_eq & 0b1111111111111; // pour lire 13 bits
-  uint16_t id = ( codereq_id_eq >>13) & 0b11; //
-  if (codereq == 15 || codereq == 16) {
-    puts("fin de partie");
+
+  // on vérifie les champs, si le codereq est de 15 ou de 16, on reçoit les valeurs de la fin de partie;
+
+ // uint16_t codereq_id_eq = ntohs(mess->CODEREQ_ID_EQ);
+ // uint16_t codereq = codereq_id_eq & 0b1111111111111; // pour lire 13 bits
+
+  if (entete_recu == 15) {
+    unsigned int gagnant_eq = (val_entete >> 13) & 0b11;
+    printf("Fin de la partie. L'equipe gagnante est %u\n",gagnant_eq);
+    return 2;
   }
 
-  uint8_t len = mess->LEN;
-  char buf_data[len+1];
-  memset(buf_data, 0, len+1);
+  if (entete_recu == 16) {
+    unsigned int gagnant_id = (val_entete >> 15) & 0b1; 
+    printf("Fin de la partie. Le gagnant est : %u \n",gagnant_id);
+    return 2;
+  }
 
-    // on reçoit la data
+  // on reset le buffer à 0, et on reçoit la longueur du message
+   uint16_t id = ( val_entete >>13) & 0b11; //
+
+  memset(buf, 0, sizeof(buf));
   recu = 0;
-  while(recu<len) { 
-      int r = recv(sock, buf_data+recu, len-recu, 0);
-      //printf("%s\n",buf_data);
+  while(recu<1) { 
+      int r = recv(sock, buf+recu, 1-recu, 0);
+      if (r<0){
+          perror("erreur lecture tchat data");
+          return 1;
+      }
+      recu += r;
+  }
+  
+  uint8_t  * longueur = (uint8_t *) buf;
+  uint8_t val_longueur = *longueur;
+  char buf_data[val_longueur+1];
+  memset(buf_data, 0, val_longueur+1);
+
+  
+  // on reçoit la data
+  recu = 0;
+  while(recu<val_longueur) { 
+      int r = recv(sock, buf_data+recu, val_longueur-recu, 0);
       if (r<0){
           perror("erreur lecture tchat data");
           return 1;
@@ -70,12 +100,17 @@ int receive_message(int sock, line * l) {
   print_message(id,buf_data,l);
   //printf("message tchat : %s\n",buf_data);
   free(mess);
-// while(1){};
   return 0 ; 
+
 }
 
-int communicate_tchat(int sock) {
+int communicate_tchat(int sock) { // bientôt à la poubelle
   struct pollfd * pfds = malloc(sizeof(*pfds));
+
+  if (pfds == NULL) {
+    perror("erreur de malloc");
+    return 1 ;
+  }
   memset(pfds, 0, sizeof(*pfds));
   pfds[0].fd= sock;
   pfds[0].events= POLLIN | POLLOUT ; 
@@ -97,6 +132,8 @@ int communicate_tchat(int sock) {
 
     }
   }
+
+  free(pfds);
 
 }
 
@@ -155,14 +192,16 @@ full_grid_msg* send_req(int mode_input, info_joueur* info_joueur, int *sock_udp,
     }
  
     /*reception des données d'identification*/
+
     char* serialized_serv_msg = malloc(BUF_SIZE*sizeof(char));
-    memset(serialized_serv_msg, 0, BUF_SIZE);
 
      if (serialized_serv_msg == NULL) {
       perror("erreur de malloc");
       close(sock_tcp);
       return NULL ;
     }
+
+     memset(serialized_serv_msg, 0, BUF_SIZE);
 
     int recu=0;
     while (recu<sizeof(message_debut_client)){
@@ -186,15 +225,9 @@ full_grid_msg* send_req(int mode_input, info_joueur* info_joueur, int *sock_udp,
 
     string_to_struct(serv_msg,serialized_serv_msg);
 
-    //todo: rajouter if équipes 
-
-    //c'est à partir de serv_msg qu'on récupère les données envoyées par le serveur
-
-            // printf("codereq_id : %u \n",ntohs(serv_msg->CODEREQ_ID_EQ));
-            // printf("portmdiff : %u \n",ntohs(serv_msg->PORTMDIFF));
-            // printf("portupd : %u \n",ntohs(serv_msg->PORTUDP));
 
         struct in6_addr * adrmdiff_convert= malloc(sizeof(struct in6_addr));
+
         if (adrmdiff_convert == NULL) {
           perror("erreur de malloc");
           close(sock_tcp);
@@ -205,12 +238,7 @@ full_grid_msg* send_req(int mode_input, info_joueur* info_joueur, int *sock_udp,
 
         char adrmdiff_string[INET6_ADDRSTRLEN];
         inet_ntop(AF_INET6,adrmdiff_convert,adrmdiff_string,INET6_ADDRSTRLEN);
-          
-        //printf("adresse de multidiffusion : %s \n",adrmdiff_string);
 
-        //  //printf("eq %u\n",ntohs(serv_msg->CODEREQ_ID_EQ)>>15 & 0b1); //? 
-        //  printf("id %u\n",ntohs(serv_msg->CODEREQ_ID_EQ)>>13 & 0b11);
-        //  printf("codereq %u\n",ntohs(serv_msg->CODEREQ_ID_EQ) & 0b11111111111111);
          if (info_check(info_joueur,serv_msg) != 0 ) {
           close(sock_tcp);
           return NULL;
@@ -319,7 +347,7 @@ full_grid_msg* send_req(int mode_input, info_joueur* info_joueur, int *sock_udp,
     }
 
     ready_req(start_msg,info_joueur);
-    //printf("id : %d , mode : %d, team : %d \n",info_joueur->id,info_joueur->mode,info_joueur->team); // attention, l'id et la team sont inversés
+    printf("id : %d , mode : %d, team : %d \n",info_joueur->id,info_joueur->mode,info_joueur->team);
     memcpy(serialized_ready_msg,start_msg,sizeof(&start_msg)); // 
     
     s = 0;
@@ -334,9 +362,6 @@ full_grid_msg* send_req(int mode_input, info_joueur* info_joueur, int *sock_udp,
       }
       s += sent;
     }
-
-   // puts("send ready effectue (client)");
-
     // lecture de multidiffusion
 
     char *buf_recv= malloc(sizeof(full_grid_msg)); //faire d'abord un recv des premier octets pour savoir si c'est une full_grid_msg ou l'autre ?
@@ -352,14 +377,28 @@ full_grid_msg* send_req(int mode_input, info_joueur* info_joueur, int *sock_udp,
       perror("erreur de recvfrom");
       return NULL;
     }
-    //printf("reçu en multidiffusion  : %s\n", buf_recv);
+    //printf("reçu en multidiffusion  : %s\n", buf);
+    if(info_joueur->id==0){
+    send_message(sock_tcp,info_joueur,"test message tchat",7);
+    }
+
+    if(info_joueur->id!=0)
+    receive_message(sock_tcp, NULL);
+
+    if(info_joueur->id==1){
+    send_message(sock_tcp,info_joueur,"deuxieme",7);
+    }
+
+        if(info_joueur->id!=1)
+    receive_message(sock_tcp, NULL);
 
 
-    free(buf_recv);
-    buf_recv=NULL;
+
     free(serv_msg);
     free(start_msg);
     free(serialized_msg);
+    free(info_joueur);
+    free(adrmdiff_convert);
     free(serialized_serv_msg);
     free(serialized_ready_msg);
   
@@ -493,7 +532,7 @@ int main(int argc, char *argv[]) {
     modified_cases_msg modified_c_msg;
     memset(&modified_c_msg, 0, sizeof(modified_c_msg));
     
-  
+
 
 
     while(true){
