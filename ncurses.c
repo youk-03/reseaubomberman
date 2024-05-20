@@ -378,6 +378,7 @@ ACTION control(line* l) {
         }
         prev_c = c;
     }
+    char buf[100];
     ACTION a = NONE;
     switch (prev_c) {
         case ERR: break;
@@ -400,6 +401,8 @@ ACTION control(line* l) {
             if (l->cursor > 0) l->cursor--;
             break;
         case '%' : // envoyer un message
+            // il faut récupérer la data (de 0 à cursor) puis appeler la fonction send_message dans client
+            memcpy(buf, l->data, l->cursor);
             l->cursor = 0;
             break;
         case '#' : // recevoir un message (juste pour tester)
