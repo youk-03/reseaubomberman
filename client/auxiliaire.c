@@ -5,14 +5,8 @@
 #include <unistd.h>
 #include <arpa/inet.h>
 #include "../format_messages.h"
+#include "auxiliaire.h"
 
-
-typedef struct info_joueur {
-    int mode ;
-    int dest ;
-    int id ;
-    int team ; 
-} info_joueur ;
 
 int join_req(message_debut_client* msg_client, int mode) { //1 si solo, 2 si équipes,à bouger vers un autre fichier
   msg_client->CODEREQ_ID_EQ = htons(mode);
