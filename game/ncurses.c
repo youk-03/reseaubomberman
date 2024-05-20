@@ -416,7 +416,7 @@ ACTION control(line* l, int sock_tcp, info_joueur * info_joueur) { //Reecrire ce
 
         
         case KEY_BACKSPACE:
-            if (l->cursor > 0) l->cursor--;
+            if (l->cursor > 0) (l->cursor)--;
             break;
         case '%' : // envoyer un message
             if (l->clean == 0){
