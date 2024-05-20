@@ -419,15 +419,11 @@ ACTION control(line* l, int sock_tcp, info_joueur * info_joueur) { //Reecrire ce
             if (l->cursor > 0) l->cursor--;
             break;
         case '%' : // envoyer un message
-            // il faut récupérer la data (de 0 à cursor) puis appeler la fonction send_message dans client
             if (l->clean == 0){
                 memcpy(buf, l->data, l->cursor);
                 send_message(sock_tcp,info_joueur, buf, 7); // à changer pour le mode en équipe
                 l->cursor = 0;
             }
-            break;
-        case '#' : // recevoir un message (juste pour tester)
-            print_message(0,"test",l);
             break;
         default:
             if (l->clean) {
